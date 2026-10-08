@@ -1270,6 +1270,11 @@
   .nav nav a.active{
     font-weight:800 !important;
   }
+  .nav nav a.active{
+  text-decoration:none !important;
+  border-bottom:none !important;
+  box-shadow:none !important;
+}
 
 
   /* ===== INICIO / HERO ===== */
