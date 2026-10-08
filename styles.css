@@ -1597,3 +1597,46 @@
   }
 }
 
+/* AJUSTES FINALES PARA CELULAR */
+@media (max-width: 600px) {
+  .nav nav a.active::after {
+    display: none !important;
+  }
+
+  .nav nav a.active {
+    text-decoration: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+  }
+
+  .nav nav {
+    justify-content: space-around !important;
+    gap: 0 !important;
+  }
+
+  .nav nav a {
+    padding: 12px 8px !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
+  }
+
+  .showcase-section {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .showcase-heading {
+    gap: 10px !important;
+    align-items: center !important;
+  }
+
+  .visual-cats {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px 12px !important;
+  }
+
+  .visual-cats img {
+    max-width: 100% !important;
+  }
+}
+
