@@ -1640,3 +1640,17 @@
   }
 }
 
+/* Quitar subrayado del menú activo en celular */
+@media (max-width: 600px) {
+  .nav nav a.active::after {
+    content: none !important;
+    display: none !important;
+    height: 0 !important;
+  }
+
+  .nav nav a.active {
+    border: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+}
