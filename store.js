@@ -272,10 +272,17 @@ function renderCart(){
 }
 function sendOrder(){
   if(!cart.length)return alert("Agrega productos al carrito.");
-  let total=0,msg="Hola, JS Trendy Shop. Quiero realizar el siguiente pedido:%0A%0A";
-  cart.forEach(i=>{const p=products.find(x=>String(x.id)===String(i.id));if(!p)return;total+=p.price*i.qty;msg+=`• ${p.name} x${i.qty} — ${money(p.price*i.qty)}%0A`;});
-  msg+=`%0ATotal: ${money(total)}%0A%0A¿Me confirman disponibilidad?`;
-  const wa=localStorage.getItem("jsWhatsApp")||"526624262742"; window.open("https://wa.me/"+wa+"?text="+msg,"_blank");
+  let total=0,msg="Hola, JS Trendy Shop. Quiero realizar el siguiente pedido:\n\n";
+  cart.forEach(i=>{
+    const p=products.find(x=>String(x.id)===String(i.id));
+    if(!p)return;
+    total+=p.price*i.qty;
+    msg+=`• ${p.name} x${i.qty} — ${money(p.price*i.qty)}\n`;
+    if(p.image) msg+=`📸 Foto del producto: https://jstrendyshop.com/f.html?id=${encodeURIComponent(p.id)}\n`;
+  });
+  msg+=`\nTotal: ${money(total)}\n\n¿Me confirman disponibilidad?`;
+  const wa=localStorage.getItem("jsWhatsApp")||"526624262742";
+  window.open("https://wa.me/"+wa+"?text="+encodeURIComponent(msg),"_blank");
 }
 
 function chooseBrand(name){
