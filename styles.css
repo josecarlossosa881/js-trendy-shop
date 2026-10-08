@@ -1142,369 +1142,458 @@
 .detail-offer-price .price-current{font-size:28px}
 .detail-offer-price .price-old{font-size:14px}
 .detail-offer-price .discount-badge{font-size:10px}
-@media(max-width:600px){.price-current{font-size:16px}.discount-badge{font-size:8px}.detail-offer-price .price-current{font-size:23px}}
-/* =========================================================
-   V16 MOBILE — DISEÑO CELULAR
-   Diseño móvil limpio — no modifica computadora
-   ========================================================= */
-
-@media (max-width:600px){
-
-  /* ===== ENCABEZADO ===== */
-
-  .nav{
-    height:108px !important;
-    padding:0 !important;
-    position:relative !important;
-  }
-
-  .nav-actions{
-    position:relative !important;
-    width:100% !important;
-    height:100% !important;
-    display:block !important;
-  }
-
-  /* Nombre de la tienda */
-  .nav-actions::before{
-    content:"JS Trendy Shop";
-    position:absolute !important;
-    top:18px !important;
-    left:18px !important;
-    z-index:20 !important;
-    display:block !important;
-    font-size:22px !important;
-    font-weight:800 !important;
-    line-height:1 !important;
-    color:#111 !important;
-    white-space:nowrap !important;
-  }
-
-  /* Iconos superiores */
-  .nav-tools{
-    position:absolute !important;
-    top:10px !important;
-    right:12px !important;
-    z-index:30 !important;
-    display:flex !important;
-    align-items:center !important;
-    gap:5px !important;
-  }
-
-  .nav-icon{
-    width:34px !important;
-    height:34px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    font-size:25px !important;
-  }
-
-  .favorites-nav-btn{
-    position:relative !important;
-    width:36px !important;
-    height:36px !important;
-  }
-
-  .favorites-nav-btn span{
-    font-size:28px !important;
-    line-height:1 !important;
-  }
-
-  .favorites-nav-btn b,
-  .cart-btn b{
-    font-size:9px !important;
-  }
-
-  .cart-btn{
-    width:38px !important;
-    height:38px !important;
-    min-width:38px !important;
-    padding:0 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-  }
-
-  .cart-icon{
-    font-size:20px !important;
-  }
-
-  /* Navegación inferior */
-  .nav nav{
-    position:absolute !important;
-    left:0 !important;
-    right:0 !important;
-    bottom:0 !important;
-    z-index:15 !important;
-    width:100% !important;
-    height:45px !important;
-    padding:0 12px !important;
-    margin:0 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:space-between !important;
-    gap:0 !important;
-    visibility:visible !important;
-    opacity:1 !important;
-  }
-
-  .nav nav a{
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    flex:1 1 25% !important;
-    min-width:0 !important;
-    height:42px !important;
-    padding:0 3px !important;
-    margin:0 !important;
-    font-size:15px !important;
-    line-height:1 !important;
-    white-space:nowrap !important;
-    text-align:center !important;
-    color:#111 !important;
-    visibility:visible !important;
-    opacity:1 !important;
-  }
-
-  .nav nav a.active{
-    font-weight:800 !important;
-  }
-  .nav nav a.active{
-  text-decoration:none !important;
-  border-bottom:none !important;
-  box-shadow:none !important;
+@media(max-width:600px){
+  .price-current{font-size:16px}
+  .discount-badge{font-size:8px}
 }
 
+/* =========================================
+   JS TRENDY SHOP — DISEÑO RESPONSIVO MÓVIL
+   El diseño de computadora se conserva
+========================================= */
 
-  /* ===== INICIO / HERO ===== */
+@media (max-width: 600px) {
 
-  .home-hero{
-    height:300px !important;
-    min-height:300px !important;
-    background-size:cover !important;
-    background-position:center !important;
+  /* PRECIOS DE OFERTAS */
+  .price-current {
+    font-size: 16px !important;
   }
 
-
-  /* ===== CATEGORÍAS ===== */
-
-  .showcase-section{
-    padding:18px 14px 10px !important;
+  .discount-badge {
+    font-size: 9px !important;
+    padding: 4px 6px !important;
   }
 
-  .showcase-heading{
-    margin-bottom:12px !important;
+  .detail-offer-price .price-current {
+    font-size: 25px !important;
   }
 
-  .showcase-heading .kicker{
-    display:none !important;
+  /* ENCABEZADO */
+  .nav {
+    position: relative !important;
+    min-height: 104px !important;
+    height: auto !important;
+    padding: 8px 12px 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #eee !important;
+    box-sizing: border-box !important;
   }
 
-  .showcase-heading h2{
-    font-size:24px !important;
-    margin:0 !important;
+  .nav-actions {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: 48px 44px !important;
+    align-items: center !important;
+    gap: 2px 8px !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  .showcase-link{
-    font-size:15px !important;
+  .nav-actions::before {
+    content: "JS Trendy Shop" !important;
+    position: static !important;
+    display: block !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    font-size: clamp(18px, 5.2vw, 23px) !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    color: #111 !important;
+    white-space: nowrap !important;
+    text-align: left !important;
   }
 
-  .visual-cats{
-    display:grid !important;
-    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-    gap:14px 8px !important;
+  /* ICONOS A LA DERECHA */
+  .nav-tools {
+    position: static !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  .visual-cats > *:nth-child(n+8){
-    display:none !important;
+  .nav-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    font-size: 27px !important;
+    line-height: 1 !important;
+    color: #111 !important;
+    text-decoration: none !important;
+  }
+
+  .favorites-nav-btn {
+    position: relative !important;
+    background: transparent !important;
+    border: 0 !important;
+  }
+
+  .favorites-nav-btn span {
+    font-size: 32px !important;
+    line-height: 1 !important;
+  }
+
+  .favorites-nav-btn b {
+    top: -2px !important;
+    right: -7px !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    font-size: 10px !important;
+  }
+
+  .cart-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-width: 48px !important;
+    height: 48px !important;
+    padding: 0 8px !important;
+    border-radius: 50% !important;
+    background: #111 !important;
+    color: #fff !important;
+  }
+
+  .cart-icon {
+    font-size: 23px !important;
+  }
+
+  .cart-btn b {
+    font-size: 12px !important;
+  }
+
+  /* MENÚ INFERIOR */
+  .nav nav {
+    position: static !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0 !important;
+    width: 100% !important;
+    height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .nav nav a {
+    position: relative !important;
+    display: flex !important;
+    flex: 1 1 25% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 40px !important;
+    padding: 0 2px !important;
+    font-size: clamp(12px, 3.5vw, 15px) !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    color: #222 !important;
+    text-decoration: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .nav nav a.active {
+    font-weight: 800 !important;
+    text-decoration: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .nav nav a.active::after {
+    content: "" !important;
+    position: absolute !important;
+    left: 20% !important;
+    right: 20% !important;
+    bottom: 1px !important;
+    height: 3px !important;
+    border-radius: 3px !important;
+    background: #111 !important;
+  }
+
+  /* IMAGEN PRINCIPAL */
+  .home-hero {
+    height: 300px !important;
+    min-height: 300px !important;
+    background-size: cover !important;
+    background-position: center !important;
+    margin: 0 !important;
+  }
+
+  /* SECCIÓN DE CATEGORÍAS */
+  #categorias {
+    padding: 28px 16px !important;
+  }
+
+  .showcase-heading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .showcase-heading h2 {
+    font-size: 25px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+  }
+
+  .showcase-heading .kicker {
+    font-size: 10px !important;
+  }
+
+  .showcase-link {
+    font-size: 14px !important;
+    white-space: nowrap !important;
+  }
+
+  .visual-cats {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px 10px !important;
+  }
+
+  .visual-cats > * {
+    min-width: 0 !important;
+  }
+
+  .visual-cats > :nth-child(n+7) {
+    display: none !important;
   }
 
   .brands-heading,
-  #featuredBrands{
-    display:none !important;
+  .featured-brands {
+    display: none !important;
   }
 
-
-  /* ===== CATÁLOGO ===== */
-
-  .catalog-section{
-    padding:14px !important;
+  /* CATÁLOGO EN LA PÁGINA DE INICIO */
+  #catalogo {
+    padding: 24px 14px !important;
   }
 
-  .catalog-shell{
-    width:100% !important;
+  .catalog-shell {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
   }
 
-  .catalog-header{
-    padding:0 !important;
-    margin-bottom:12px !important;
+  .catalog-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
   }
 
-  .catalog-title-block h2{
-    font-size:0 !important;
-    margin:0 !important;
+  .catalog-title-block h2 {
+    font-size: 25px !important;
+    margin: 0 !important;
   }
 
-  .catalog-title-block h2::after{
-    content:"Productos destacados";
-    font-size:24px !important;
+  .catalog-help {
+    display: none !important;
   }
 
-  .catalog-title-block .catalog-help{
-    display:none !important;
+  .mobile-view-all {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin-top: 6px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #333 !important;
+    font-size: 13px !important;
   }
 
-  .mobile-view-all{
-    display:inline-flex !important;
-    align-items:center !important;
-    gap:5px !important;
-    border:0 !important;
-    background:transparent !important;
-    color:#d98a00 !important;
-    font-size:15px !important;
-    font-weight:700 !important;
-    cursor:pointer !important;
+  body:not(.mobile-catalog-open) .catalog-search-wrap,
+  body:not(.mobile-catalog-open) #catalogCategoryTabs,
+  body:not(.mobile-catalog-open) .catalog-controls,
+  body:not(.mobile-catalog-open) .catalog-sort {
+    display: none !important;
   }
 
-  .catalog-search-wrap,
-  .catalog-category-tabs,
-  .catalog-controls,
-  .catalog-products-toolbar{
-    display:none !important;
+  body:not(.mobile-catalog-open) .catalog-products-toolbar {
+    margin: 0 0 14px !important;
   }
 
-  .catalog-grid{
-    display:grid !important;
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    gap:10px !important;
+  body:not(.mobile-catalog-open) .catalog-products-title h3 {
+    font-size: 21px !important;
+    font-weight: 800 !important;
   }
 
-  body:not(.mobile-catalog-open) .catalog-grid > .product:nth-child(n+5){
-    display:none !important;
+  body:not(.mobile-catalog-open) .catalog-products-title h3::after {
+    content: "" !important;
   }
 
-  .catalog-grid .product{
-    min-width:0 !important;
+  body:not(.mobile-catalog-open) #catalogResultsCount {
+    display: none !important;
   }
 
-
-  /* ===== OFERTAS ===== */
-
-  .offers-section{
-    padding:14px !important;
+  .catalog-grid,
+  #products {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px 11px !important;
   }
 
-  .offers-premium{
-    width:100% !important;
+  .catalog-grid > *,
+  #products > * {
+    min-width: 0 !important;
   }
 
-  .offers-premium-head{
-    min-height:185px !important;
-    padding:22px 18px !important;
+  body:not(.mobile-catalog-open) #products > :nth-child(n+5) {
+    display: none !important;
   }
 
-  .offers-premium-head h2{
-    font-size:40px !important;
+  body.mobile-catalog-open .mobile-view-all {
+    display: none !important;
   }
 
-  .offers-premium-head p{
-    font-size:16px !important;
-    line-height:1.4 !important;
+  body.mobile-catalog-open .catalog-search-wrap {
+    display: flex !important;
+    min-width: 0 !important;
   }
 
-  .offers-catalog-btn{
-    font-size:14px !important;
-    padding:11px 15px !important;
+  body.mobile-catalog-open #catalogCategoryTabs,
+  body.mobile-catalog-open .catalog-controls,
+  body.mobile-catalog-open .catalog-sort {
+    display: flex !important;
   }
 
-  .offer-category-tabs{
-    display:flex !important;
-    overflow-x:auto !important;
-    gap:8px !important;
-    padding:10px 0 !important;
-    scrollbar-width:none !important;
+  body.mobile-catalog-open #products > * {
+    display: block !important;
   }
 
-  .offer-category-tabs::-webkit-scrollbar{
-    display:none !important;
+  /* OFERTAS */
+  #ofertas {
+    padding: 24px 14px !important;
   }
 
-  .offer-grid{
-    display:grid !important;
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    gap:8px !important;
+  .offers-premium {
+    padding: 0 !important;
   }
 
-  .offer-grid .product{
-    min-width:0 !important;
+  .offers-premium-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin-bottom: 18px !important;
   }
 
-  .offer-grid .product h3{
-    font-size:14px !important;
+  .offers-premium-head h2 {
+    font-size: 30px !important;
+    line-height: 1.1 !important;
+    margin: 0 0 8px !important;
   }
 
-  .offer-grid .product p{
-    font-size:11px !important;
+  .offers-premium-head p {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
   }
 
-  .offer-grid .price-current{
-    font-size:20px !important;
+  .offers-catalog-btn {
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    padding: 9px 10px !important;
   }
 
-  .offer-grid .price-old{
-    font-size:12px !important;
+  .offer-category-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    padding-bottom: 10px !important;
   }
 
-  .offer-grid .discount-badge{
-    font-size:9px !important;
-    padding:4px 6px !important;
+  .offer-grid,
+  #offerProducts {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px 11px !important;
+  }
+
+  .offer-grid > *,
+  #offerProducts > * {
+    min-width: 0 !important;
+  }
+
+  .offer-price-wrap {
+    gap: 5px !important;
+  }
+
+  .price-old {
+    font-size: 11px !important;
+  }
+
+  /* DETALLES, CARRITO Y FAVORITOS */
+  .detail-box {
+    width: calc(100% - 24px) !important;
+    max-width: 440px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  .cart {
+    width: min(92vw, 400px) !important;
+  }
+
+  footer {
+    gap: 8px !important;
+    padding: 24px 14px !important;
+    text-align: center !important;
+  }
+}
+
+/* CELULARES ESTRECHOS */
+@media (max-width: 380px) {
+  .nav {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .nav-tools {
+    gap: 8px !important;
+  }
+
+  .nav nav a {
+    font-size: 12px !important;
+  }
+
+  .home-hero {
+    height: 270px !important;
+    min-height: 270px !important;
+  }
+
+  #categorias {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .showcase-heading h2,
+  .catalog-title-block h2 {
+    font-size: 23px !important;
+  }
+
+  .offers-premium-head h2 {
+    font-size: 27px !important;
   }
 }
 
-
-/* ===== CELULARES PEQUEÑOS ===== */
-
-@media (max-width:380px){
-
-  .nav{
-    height:104px !important;
-  }
-
-  .nav-actions::before{
-    top:16px !important;
-    left:15px !important;
-    font-size:20px !important;
-  }
-
-  .nav-tools{
-    top:8px !important;
-    right:8px !important;
-  }
-
-  .nav nav{
-    padding:0 8px !important;
-  }
-
-  .nav nav a{
-    font-size:13px !important;
-  }
-
-  .home-hero{
-    height:270px !important;
-    min-height:270px !important;
-  }
-
-  .offers-premium-head h2{
-    font-size:34px !important;
-  }
-}
-
-/* Quitar línea del botón Inicio en celular */
-@media (max-width:600px){
-  .nav nav a.active{
-    text-decoration:none !important;
-    border-bottom:0 !important;
-    box-shadow:none !important;
-  }
-}
