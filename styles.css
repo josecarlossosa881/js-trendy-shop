@@ -1163,6 +1163,34 @@
     justify-content:flex-end !important;
     align-items:stretch !important;
   }
+  .nav-actions{
+  position:relative !important;
+}
+
+.nav-actions nav{
+  position:absolute !important;
+  bottom:0 !important;
+  left:0 !important;
+  right:0 !important;
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+.nav-actions::before{
+  z-index:5 !important;
+  display:block !important;
+}
+
+.nav-tools{
+  z-index:10 !important;
+}
+
+.nav nav a{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
 
   .nav-actions::before{
     content:"JS Trendy Shop";
