@@ -1,0 +1,60 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JS Trendy Shop | Moda y estilo JS</title><link rel="stylesheet" href="styles.css"></head><body>
+<header class="nav"><div class="nav-actions"><nav aria-label="Navegación principal"><a class="active" href="#inicio">Inicio</a><a href="#catalogo">Catálogo</a><a href="#categorias">Categorías</a><a href="#ofertas">Ofertas</a></nav><div class="nav-tools"><a class="nav-icon" href="#catalogo" aria-label="Buscar">⌕</a><button class="nav-icon favorites-nav-btn" id="favoritesBtn" aria-label="Abrir favoritos"><span>♡</span><b id="favoriteCount">0</b></button><button class="cart-btn" id="cartBtn" aria-label="Abrir carrito"><span class="cart-icon">🛒</span><b id="count">0</b></button></div></div></header>
+<section class="hero home-hero" id="inicio" aria-label="JS Trendy Shop"><span class="sr-only">JS Trendy Shop — Moda y estilo JS. Explora nuestro catálogo.</span></section>
+<section class="section showcase-section" id="categorias"><div class="showcase-heading"><div><p class="kicker">EXPLORA LA TIENDA</p><h2>Categorías</h2></div><button type="button" class="showcase-link" data-category="Todos">Ver todo <span>→</span></button></div><div id="cats" class="visual-cats"></div><div class="showcase-heading brands-heading"><h2>Marcas destacadas</h2><button type="button" class="showcase-link" data-featured-brands="1">Ver todas <span>→</span></button></div><div id="featuredBrands" class="featured-brands"></div></section>
+<section class="section catalog-section" id="catalogo">
+  <div class="catalog-shell">
+    <div class="catalog-header catalog-header-tabs">
+      <div class="catalog-title-block">
+        <h2>Catálogo</h2>
+        <p class="catalog-help">Encuentra tus productos favoritos</p>
+      </div>
+      <div class="catalog-search-wrap">
+        <span class="catalog-search-icon" aria-hidden="true">⌕</span>
+        <input id="search" class="search catalog-search" placeholder="Buscar marca, modelo o producto..." aria-label="Buscar productos">
+      </div>
+    </div>
+
+    <div id="catalogCategoryTabs" class="catalog-category-tabs" aria-label="Categorías del catálogo"></div>
+
+    <div class="catalog-controls" aria-label="Filtros del catálogo">
+      <div class="catalog-control-group catalog-size-control" id="sizeFilterBlock">
+        <span class="catalog-control-label">Tallas:</span>
+        <div id="sizes" class="filter-chips"></div>
+      </div>
+    </div>
+
+    <div class="catalog-products-toolbar">
+      <div class="catalog-products-title">
+        <h3 id="catalogResultsTitle">Todos los productos</h3>
+        <span id="catalogResultsCount"></span>
+      </div>
+      <label class="catalog-sort">
+        <span>Ordenar</span>
+        <select id="catalogSort" aria-label="Ordenar productos">
+          <option value="default">Predeterminado</option>
+          <option value="price-asc">Precio menor</option>
+          <option value="price-desc">Precio mayor</option>
+        </select>
+      </label>
+    </div>
+    <div id="products" class="grid catalog-grid"></div>
+  </div>
+</section>
+<section class="section offers-section" id="ofertas">
+  <div class="offers-premium">
+    <div class="offers-premium-head">
+      <div>
+        <h2>Ofert<span class="offer-accent">a</span>s</h2>
+        <p>Productos de nuestras mejores marcas<br>con precios especiales.</p>
+      </div>
+      <a class="offers-catalog-btn" href="#catalogo">Ver catálogo <span>→</span></a>
+    </div>
+    <div id="offerCategoryTabs" class="offer-category-tabs" aria-label="Categorías de ofertas"></div>
+    <div id="offerProducts" class="grid offer-grid"></div>
+  </div>
+</section>
+<footer><b>JS Trendy Shop</b><span>Moda y estilo JS</span><span>Pedidos por WhatsApp · 662 426 2742</span></footer>
+<div id="shade" class="shade"></div><aside id="favorites" class="cart favorites-panel"><div class="cart-head"><div><p class="kicker">TUS PRODUCTOS</p><h2>Favoritos</h2></div><button id="favoritesClose" class="x">×</button></div><div id="favoriteItems" class="cart-items favorite-items"></div><small>Los favoritos se guardan en este navegador.</small></aside><aside id="cart" class="cart"><div class="cart-head"><div><p class="kicker">TU PEDIDO</p><h2>Carrito</h2></div><button id="close" class="x">×</button></div><div id="cartItems" class="cart-items"></div><div class="total"><span>Total</span><b id="total">$0</b></div><button id="send" class="btn full">📲 Enviar pedido por WhatsApp</button><small>Sin registro. Tu pedido se abrirá en WhatsApp.</small></aside>
+<div id="detailModal" class="detail-modal hidden"><div class="detail-box"><button id="detailClose" class="x detail-x">×</button><div id="detailContent" class="detail-content"></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="store.js?v=20261006-v84"></script></body></html>
