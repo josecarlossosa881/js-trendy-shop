@@ -1499,3 +1499,12 @@
     font-size:34px !important;
   }
 }
+
+/* Quitar línea del botón Inicio en celular */
+@media (max-width:600px){
+  .nav nav a.active{
+    text-decoration:none !important;
+    border-bottom:0 !important;
+    box-shadow:none !important;
+  }
+}
