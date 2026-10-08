@@ -1639,3 +1639,21 @@
     max-width: 100% !important;
   }
 }
+/* Recuperar línea del menú activo en celular */
+@media (max-width: 600px) {
+  .nav nav a.active::after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 14px;
+    height: 2px;
+    background: #181818;
+  }
+
+  .nav nav a.active {
+    position: relative;
+    font-weight: 800 !important;
+  }
+}
