@@ -1143,3 +1143,274 @@
 .detail-offer-price .price-old{font-size:14px}
 .detail-offer-price .discount-badge{font-size:10px}
 @media(max-width:600px){.price-current{font-size:16px}.discount-badge{font-size:8px}.detail-offer-price .price-current{font-size:23px}}
+/* =========================================================
+   V16 MOBILE — DISEÑO CELULAR
+   No modifica el diseño de computadora
+   ========================================================= */
+
+@media (max-width:600px){
+
+  /* ===== ENCABEZADO ===== */
+  .nav{
+    height:112px !important;
+    padding:0 !important;
+  }
+
+  .nav-actions{
+    height:100% !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:flex-end !important;
+    align-items:stretch !important;
+  }
+
+  .nav-actions::before{
+    content:"JS Trendy Shop";
+    position:absolute;
+    top:25px;
+    left:18px;
+    font-size:23px;
+    font-weight:800;
+    color:#111;
+    line-height:1;
+  }
+
+  .nav nav{
+    display:flex !important;
+    justify-content:space-around !important;
+    align-items:center !important;
+    width:100% !important;
+    height:48px !important;
+    padding:0 10px !important;
+    gap:0 !important;
+  }
+
+  .nav nav a{
+    font-size:16px !important;
+    padding:8px 6px !important;
+  }
+
+  .nav-tools{
+    position:absolute !important;
+    top:18px !important;
+    right:12px !important;
+    display:flex !important;
+    align-items:center !important;
+    gap:8px !important;
+  }
+
+  .nav-icon{
+    font-size:28px !important;
+    width:34px !important;
+    height:34px !important;
+  }
+
+  .favorites-nav-btn{
+    position:relative !important;
+  }
+
+  .cart-btn{
+    width:42px !important;
+    height:42px !important;
+  }
+
+  /* ===== INICIO / HERO ===== */
+  .home-hero{
+    height:300px !important;
+    min-height:300px !important;
+    background-size:cover !important;
+    background-position:center !important;
+  }
+
+  /* ===== CATEGORÍAS ===== */
+  .showcase-section{
+    padding:18px 14px 10px !important;
+  }
+
+  .showcase-heading{
+    margin-bottom:12px !important;
+  }
+
+  .showcase-heading .kicker{
+    display:none !important;
+  }
+
+  .showcase-heading h2{
+    font-size:24px !important;
+    margin:0 !important;
+  }
+
+  .showcase-link{
+    font-size:15px !important;
+  }
+
+  .visual-cats{
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:14px 8px !important;
+  }
+
+  .visual-cats > *:nth-child(n+8){
+    display:none !important;
+  }
+
+  .brands-heading,
+  #featuredBrands{
+    display:none !important;
+  }
+
+  /* ===== CATÁLOGO ===== */
+  .catalog-section{
+    padding:14px !important;
+  }
+
+  .catalog-shell{
+    width:100% !important;
+  }
+
+  .catalog-header{
+    padding:0 !important;
+    margin-bottom:12px !important;
+  }
+
+  .catalog-title-block h2{
+    font-size:24px !important;
+  }
+
+  .catalog-title-block .catalog-help{
+    display:none !important;
+  }
+
+  .catalog-title-block h2{
+    font-size:0 !important;
+  }
+
+  .catalog-title-block h2::after{
+    content:"Productos destacados";
+    font-size:24px;
+  }
+
+  .mobile-view-all{
+    display:inline-flex !important;
+    align-items:center !important;
+    gap:5px !important;
+    border:0 !important;
+    background:transparent !important;
+    color:#d98a00 !important;
+    font-size:15px !important;
+    font-weight:700 !important;
+    cursor:pointer !important;
+  }
+
+  .catalog-search-wrap,
+  .catalog-category-tabs,
+  .catalog-controls,
+  .catalog-products-toolbar{
+    display:none !important;
+  }
+
+  .catalog-grid{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px !important;
+  }
+
+  body:not(.mobile-catalog-open) .catalog-grid > .product:nth-child(n+5){
+    display:none !important;
+  }
+
+  .catalog-grid .product{
+    min-width:0 !important;
+  }
+
+  /* ===== OFERTAS ===== */
+  .offers-section{
+    padding:14px !important;
+  }
+
+  .offers-premium{
+    width:100% !important;
+  }
+
+  .offers-premium-head{
+    min-height:185px !important;
+    padding:22px 18px !important;
+  }
+
+  .offers-premium-head h2{
+    font-size:40px !important;
+  }
+
+  .offers-premium-head p{
+    font-size:16px !important;
+    line-height:1.4 !important;
+  }
+
+  .offers-catalog-btn{
+    font-size:14px !important;
+    padding:11px 15px !important;
+  }
+
+  .offer-category-tabs{
+    display:flex !important;
+    overflow-x:auto !important;
+    gap:8px !important;
+    padding:10px 0 !important;
+    scrollbar-width:none !important;
+  }
+
+  .offer-category-tabs::-webkit-scrollbar{
+    display:none !important;
+  }
+
+  .offer-grid{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+
+  .offer-grid .product{
+    min-width:0 !important;
+  }
+
+  .offer-grid .product h3{
+    font-size:14px !important;
+  }
+
+  .offer-grid .product p{
+    font-size:11px !important;
+  }
+
+  .offer-grid .price-current{
+    font-size:20px !important;
+  }
+
+  .offer-grid .price-old{
+    font-size:12px !important;
+  }
+
+  .offer-grid .discount-badge{
+    font-size:9px !important;
+    padding:4px 6px !important;
+  }
+}
+
+@media (max-width:380px){
+
+  .home-hero{
+    height:270px !important;
+    min-height:270px !important;
+  }
+
+  .nav nav a{
+    font-size:14px !important;
+  }
+
+  .nav-actions::before{
+    font-size:21px;
+  }
+
+  .offers-premium-head h2{
+    font-size:34px !important;
+  }
+}
