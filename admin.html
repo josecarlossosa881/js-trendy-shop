@@ -1,495 +1,772 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>JS Trendy Shop | Administrador</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="admin-responsive.css?v=20261009-7">
-  <style>
-    .auth-screen{min-height:100vh;display:grid;place-items:center;padding:25px;background:#f5f3f1}
-    .auth-box{width:min(430px,100%);background:#fff;border:1px solid #ddd8d4;border-radius:10px;padding:32px;box-shadow:0 12px 35px #00000012}
-    .auth-logo{text-align:center;margin-bottom:25px}
-    .auth-logo .mark{font:52px Georgia,serif}
-    .auth-logo small{display:block;font-size:10px;font-weight:700;letter-spacing:.18em;margin-top:8px}
-    .auth-box h1{font:500 32px Georgia,serif;margin:0 0 8px}
-    .auth-box p{color:#666;line-height:1.5}
-    .auth-box label{display:block;font-size:13px;font-weight:700;margin:18px 0}
-    .auth-box input{width:100%;padding:13px;border:1px solid #ccc;border-radius:5px;font:inherit;margin-top:7px}
-    .auth-box button{width:100%;margin-top:8px}
-    .auth-error{color:#a40000!important;background:#fff1f1;border:1px solid #f0cccc;border-radius:5px;padding:10px;font-size:13px}
-    .auth-success{color:#176b35!important;background:#effaf2;border:1px solid #ccebd4;border-radius:5px;padding:10px;font-size:13px}
-    #adminPanel{display:none}
-    .admin-user{font-size:13px;color:#666}
-    .logout-btn{border:1px solid #ccc;background:#fff;padding:9px 13px;border-radius:4px;cursor:pointer}
-    .image-preview{width:110px;height:110px;background:#eee;border-radius:6px;overflow:hidden;display:grid;place-items:center;color:#777;font-size:12px;margin-top:8px}
-    .image-preview img{width:100%;height:100%;object-fit:cover}
-    .upload-status{font-size:12px;color:#666;margin-top:8px}
-    .visual-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:20px}
-    .visual-admin-grid>div{border:1px solid #e5e0dc;border-radius:8px;padding:18px;background:#faf9f7}
-    .visual-admin-grid h3{margin:0 0 15px}
-    .visual-admin-grid label{display:block;font-size:13px;font-weight:700;margin:12px 0}
-    .visual-admin-grid .search{width:100%;margin-top:6px}
-    .visual-config-card .admin-item img{width:58px;height:58px;object-fit:cover;border-radius:50%;background:#eee}
+let editingId = null;
 
-    .category-side-nav{display:none;margin:-4px 0 10px 12px;padding:4px 0 2px 12px;border-left:1px solid #d8d2cd}
-    .category-side-nav.open{display:block}
-    .category-side-nav button{display:block;width:100%;text-align:left;border:0;background:transparent;color:#555;padding:9px 12px;border-radius:5px;cursor:pointer;font:inherit;font-size:13px;font-weight:700}
-    .category-side-nav button:hover{background:#f2efec;color:#222}
-    .category-side-nav button.active{background:#eeeae6;color:#222}
-    .category-panel.hidden{display:none}
-    .category-panel-title{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
-    .category-panel-title h2{margin:0}
-    .inventory-row{flex-wrap:wrap}
-    .inventory-row .grow{min-width:170px}
-    .inventory-row button{flex:0 0 auto}
-    .size-inventory-card{display:block;background:#fff;border:1px solid #e8e3df;border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 5px 18px #20160e08}
-    .size-inventory-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}
-    .size-inventory-table{width:100%;border-collapse:separate;border-spacing:0;min-width:850px;font-size:14px}
-    .size-inventory-table th{background:#f7f5f2;color:#5b554f;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:13px 12px;white-space:nowrap}
-    .size-inventory-table th:first-child{border-radius:8px 0 0 8px}.size-inventory-table th:last-child{border-radius:0 8px 8px 0}
-    .size-inventory-table td{padding:11px 12px;border-bottom:1px solid #eee9e4;vertical-align:middle}
-    .size-inventory-table tbody tr:last-child td{border-bottom:0}
-    .size-inventory-table tbody tr:hover{background:#fcfbfa}
-    .size-inventory-product{display:flex;align-items:center;gap:11px;min-width:220px}
-    .size-inventory-photo{width:54px;height:54px;flex:0 0 54px;border-radius:8px;overflow:hidden;background:#f0eeeb;display:grid;place-items:center;color:#999;font-size:10px}
-    .size-inventory-photo img{width:100%;height:100%;object-fit:cover;display:block}
-    .size-inventory-name{font-weight:700;color:#24211f;line-height:1.3}
-    .size-inventory-meta{font-size:11px;color:#777;margin-top:4px}
-    .size-stock-number{display:inline-block;min-width:32px;text-align:center;font-weight:800;padding:5px 9px;border-radius:7px;background:#f3f1ee}
-    .size-stock-number.zero{color:#a43b31;background:#fff0ee}
-    .size-inventory-actions{display:flex;gap:6px;align-items:center;white-space:nowrap}
-    .size-inventory-actions button{padding:7px 9px;font-size:12px;border-radius:6px;cursor:pointer}
-    .size-inventory-actions .archive-size-btn{border:1px solid #e4c8c4;color:#9a3b32;background:#fff8f7}
-    .inventory-empty-photo{font-size:10px;color:#888;text-align:center}
-    @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}.size-inventory-card{padding:8px}.size-inventory-table{min-width:790px}}
-    @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}}
-  
-/* Ajustes responsive integrados para que funcionen aunque el CSS externo esté en caché. */
-@media (max-width: 700px) {
-  html, body.admin-body { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
-  #adminPanel { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
-  #adminPanel .admin-top {
-    display:flex !important; flex-direction:column !important; align-items:stretch !important;
-    gap:10px !important; padding:12px 14px !important; width:100% !important;
-  }
-  #adminPanel .admin-top > div {
-    display:flex !important; width:100% !important; min-width:0 !important;
-    align-items:center !important; justify-content:space-between !important; flex-wrap:wrap !important; gap:8px !important;
-  }
-  #adminPanel .admin-top > div:first-child a { font-size:13px !important; }
-  #adminPanel .admin-top strong { margin:0 !important; font-size:14px !important; }
-  #adminPanel .admin-user { font-size:12px !important; max-width:100% !important; overflow-wrap:anywhere !important; }
-  #adminPanel .logout-btn { padding:8px 10px !important; min-height:40px !important; }
-  #adminPanel .admin {
-    display:grid !important; grid-template-columns:minmax(0,1fr) !important;
-    gap:12px !important; width:100% !important; max-width:100% !important; padding:12px !important; margin:0 !important;
-  }
-  #adminPanel .admin > section, #adminPanel .admin-menu { width:100% !important; min-width:0 !important; max-width:100% !important; }
-  #adminPanel .admin-menu {
-    display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    gap:7px !important; padding:10px !important; overflow:visible !important;
-  }
-  #adminPanel .admin-menu > button {
-    display:block !important; width:100% !important; min-width:0 !important; max-width:100% !important;
-    min-height:44px !important; padding:10px 8px !important; font-size:13px !important;
-    line-height:1.25 !important; white-space:normal !important; overflow-wrap:anywhere !important;
-  }
-  #adminPanel h1, #adminPanel #productsView h1, #adminPanel #inventoryView h1,
-  #adminPanel #archivedView h1, #adminPanel #categoriesView h1, #adminPanel #settingsView h1 {
-    font-size:clamp(30px,8vw,40px) !important; line-height:1.08 !important;
-    margin:4px 0 12px !important; overflow-wrap:anywhere !important;
-  }
-  #adminPanel .hint { font-size:14px !important; line-height:1.45 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
-  #adminPanel #inventoryView { min-width:0 !important; width:100% !important; max-width:100% !important; }
-  #adminPanel #inventoryView > label { display:block !important; width:100% !important; margin:12px 0 !important; }
-  #adminPanel #inventorySearch { display:block !important; width:100% !important; max-width:100% !important; min-width:0 !important; font-size:14px !important; }
-  #adminPanel .size-inventory-card { width:100% !important; max-width:100% !important; min-width:0 !important; padding:10px !important; overflow:hidden !important; }
-  #adminPanel .size-inventory-card > div:first-child { align-items:flex-start !important; }
-  #adminPanel .size-inventory-card h2 { font-size:20px !important; line-height:1.2 !important; }
-  #adminPanel .size-inventory-scroll { width:100% !important; max-width:100% !important; overflow:visible !important; }
-  #adminPanel .size-inventory-table { display:block !important; width:100% !important; min-width:0 !important; max-width:100% !important; table-layout:fixed !important; border-collapse:separate !important; border-spacing:0 !important; }
-  #adminPanel .size-inventory-table thead { display:none !important; }
-  #adminPanel .size-inventory-table tbody { display:block !important; width:100% !important; }
-  #adminPanel .size-inventory-table tbody tr {
-    display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
-    gap:0 10px !important; width:100% !important; min-width:0 !important;
-    padding:12px 10px !important; margin:0 0 10px !important;
-    border:1px solid #e9e3de !important; border-radius:10px !important; background:#fff !important;
-  }
-  #adminPanel .size-inventory-table tbody td {
-    display:flex !important; align-items:center !important; justify-content:space-between !important;
-    gap:8px !important; width:auto !important; min-width:0 !important; padding:7px 0 !important;
-    border:0 !important; font-size:13px !important; overflow-wrap:anywhere !important;
-  }
-  #adminPanel .size-inventory-table tbody td::before {
-    content:attr(data-label); flex:0 0 auto; color:#77716b; font-size:10px;
-    font-weight:800; letter-spacing:.04em; text-transform:uppercase;
-  }
-  #adminPanel .size-inventory-table tbody td:nth-child(1) { grid-column:1 !important; grid-row:1 !important; justify-content:flex-start !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(1)::before { content:none !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2) { grid-column:1 / -1 !important; grid-row:2 !important; justify-content:flex-start !important; padding-top:2px !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2)::before { content:none !important; }
-  #adminPanel .size-inventory-product { display:flex !important; min-width:0 !important; gap:8px !important; }
-  #adminPanel .size-inventory-name { font-size:14px !important; overflow-wrap:anywhere !important; }
-  #adminPanel .size-inventory-meta { font-size:11px !important; overflow-wrap:anywhere !important; }
-  #adminPanel .size-inventory-photo { width:48px !important; height:48px !important; flex:0 0 48px !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(3) { grid-column:1 !important; grid-row:3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(4) { grid-column:2 !important; grid-row:3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(5) { grid-column:1 / -1 !important; grid-row:4 !important; justify-content:flex-start !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(6) { grid-column:1 / -1 !important; grid-row:5 !important; display:block !important; padding-top:10px !important; border-top:1px solid #f0ece8 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(6)::before { content:'ACCIONES' !important; display:block !important; margin-bottom:8px !important; }
-  #adminPanel .size-inventory-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; white-space:normal !important; }
-  #adminPanel .size-inventory-actions button { width:100% !important; min-width:0 !important; min-height:42px !important; padding:9px 7px !important; font-size:12px !important; white-space:normal !important; }
-  #adminPanel #productsView > div:first-child { align-items:flex-start !important; flex-wrap:wrap !important; gap:10px !important; }
-  #adminPanel #productsView > div:first-child > button { width:100% !important; min-height:44px !important; }
+const $ = id => document.getElementById(id);
+
+const DEFAULT_CATS = ["Todos","Bolsas","Carteras","Calzado","Ropa","Perfumes","Accesorios"];
+const STORAGE_BUCKET = "productos";
+const VISUAL_CATEGORY_BUCKET = STORAGE_BUCKET;
+
+async function getVisualCategories(){
+  const {data,error}=await supabaseClient.from("tienda_categorias").select("id,nombre,etiqueta,imagen,activo,orden").order("orden",{ascending:true}).order("id",{ascending:true});
+  if(error) throw new Error(error.message);
+  return data||[];
+}
+async function getVisualBrands(){
+  const {data,error}=await supabaseClient.from("tienda_marcas").select("id,nombre,imagen,activo,destacada,orden").order("orden",{ascending:true}).order("id",{ascending:true});
+  if(error) throw new Error(error.message);
+  return data||[];
+}
+async function uploadVisualImage(file){
+  if(!file) return "";
+  if(!file.type.startsWith("image/")) throw new Error("Selecciona una imagen válida.");
+  const extension=(file.name.split(".").pop()||"jpg").toLowerCase();
+  const path=`visual-${crypto.randomUUID()}-${safeFileName(file.name)||`imagen.${extension}`}`;
+  const {error}=await supabaseClient.storage.from(VISUAL_CATEGORY_BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+  if(error) throw new Error(error.message);
+  return publicImageUrl(path);
+}
+function nextVisualOrder(items){
+  const max = (items||[]).reduce((m,item)=>Math.max(m, Number(item.orden)||0), 0);
+  return max + 1;
 }
 
-  
-/* Pulido final basado en las capturas reales del administrador en móvil. */
-@media (max-width: 700px) {
-  #adminPanel .admin-top {
-    box-sizing:border-box !important; padding:10px 14px !important; gap:7px !important;
-    border-bottom:1px solid #e8e2dd !important;
-  }
-  #adminPanel .admin-top > div:first-child {
-    display:grid !important; grid-template-columns:auto minmax(0,1fr) !important;
-    align-items:center !important; gap:12px !important;
-  }
-  #adminPanel .admin-top > div:first-child a { white-space:nowrap !important; font-size:13px !important; }
-  #adminPanel .admin-top strong { display:block !important; font-size:15px !important; line-height:1.2 !important; overflow-wrap:normal !important; }
-  #adminPanel .admin-top > div:last-child { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; align-items:center !important; gap:10px !important; }
-  #adminPanel .admin-user { min-width:0 !important; font-size:12px !important; line-height:1.3 !important; overflow-wrap:anywhere !important; }
-  #adminPanel .logout-btn { white-space:nowrap !important; font-size:12px !important; padding:8px 10px !important; }
-  #adminPanel .admin { padding:10px 12px 20px !important; gap:10px !important; }
-  #adminPanel .admin-menu { padding:8px !important; gap:5px !important; border-radius:12px !important; }
-  #adminPanel .admin-menu > button { font-size:12px !important; min-height:40px !important; padding:8px 6px !important; border-radius:8px !important; }
-  #adminPanel .kicker { font-size:10px !important; letter-spacing:.15em !important; margin-bottom:8px !important; }
-  #adminPanel #inventoryView h1 { font-size:36px !important; margin:0 0 10px !important; }
-  #adminPanel #inventoryView > .hint { font-size:14px !important; line-height:1.4 !important; margin:0 0 12px !important; }
-  #adminPanel #inventoryView > label { margin:10px 0 !important; }
-  #adminPanel #inventorySearch { padding:13px 14px !important; min-height:46px !important; }
-  #adminPanel .size-inventory-card { margin-top:10px !important; padding:12px !important; border-radius:14px !important; }
-  #adminPanel .size-inventory-card > div:first-child { display:flex !important; flex-direction:column !important; gap:10px !important; margin:0 0 12px !important; }
-  #adminPanel .size-inventory-card h2 { font-size:20px !important; margin-bottom:5px !important; }
-  #adminPanel .size-inventory-card .hint { font-size:13px !important; line-height:1.4 !important; }
-  #adminPanel #refreshSizeInventory { align-self:flex-start !important; min-height:38px !important; padding:8px 12px !important; }
-  #adminPanel .size-inventory-table tbody tr {
-    grid-template-columns:56px minmax(0,1fr) !important; gap:0 10px !important;
-    padding:10px !important; margin-bottom:9px !important; border-radius:12px !important;
-  }
-  #adminPanel .size-inventory-table tbody td { padding:5px 0 !important; font-size:12px !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(1) { grid-column:1 !important; grid-row:1 !important; align-self:start !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2) { grid-column:2 !important; grid-row:1 !important; align-self:center !important; padding:0 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2)::before { content:none !important; }
-  #adminPanel .size-inventory-photo { width:52px !important; height:58px !important; flex-basis:52px !important; }
-  #adminPanel .size-inventory-name { font-size:14px !important; line-height:1.25 !important; }
-  #adminPanel .size-inventory-meta { font-size:11px !important; line-height:1.3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(3) { grid-column:1 !important; grid-row:2 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(4) { grid-column:2 !important; grid-row:2 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(5) { grid-column:1 / -1 !important; grid-row:3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(6) { grid-column:1 / -1 !important; grid-row:4 !important; padding-top:8px !important; }
-  #adminPanel .size-inventory-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; }
-  #adminPanel .size-inventory-actions button { min-height:39px !important; padding:7px 5px !important; font-size:12px !important; }
+function setNextVisualOrders(cats, brands){
+  const catOrder=$("visualCatOrder");
+  const brandOrder=$("visualBrandOrder");
+  if(catOrder) catOrder.value=String(nextVisualOrder(cats));
+  if(brandOrder) brandOrder.value=String(nextVisualOrder(brands));
 }
 
-
-
-/* V4 — remate visual para uso diario en móvil. */
-.admin-no-photo {
-  width:100%; height:100%; min-height:48px; display:flex; align-items:center; justify-content:center;
-  padding:5px; border-radius:8px; background:#f2efec; color:#817a73; font-size:10px; font-weight:600;
-  text-align:center; line-height:1.2;
-}
-@media (max-width:700px) {
-  #adminPanel .admin-top { padding:9px 13px !important; gap:6px !important; }
-  #adminPanel .admin-top > div:first-child { grid-template-columns:auto minmax(0,1fr) !important; gap:9px !important; }
-  #adminPanel .admin-top strong { font-size:14px !important; letter-spacing:-.01em !important; }
-  #adminPanel .admin-top > div:last-child { grid-template-columns:minmax(0,1fr) auto !important; gap:7px !important; }
-  #adminPanel .admin-user { font-size:11px !important; }
-  #adminPanel .logout-btn { min-height:36px !important; padding:7px 9px !important; }
-  #adminPanel .admin { padding:9px 12px 18px !important; gap:9px !important; }
-  #adminPanel .admin-menu { padding:7px !important; gap:4px !important; }
-  #adminPanel .admin-menu > button { min-height:38px !important; padding:7px 8px !important; font-size:12px !important; line-height:1.15 !important; }
-  #adminPanel #productsView > div:first-child { margin-bottom:12px !important; gap:7px !important; }
-  #adminPanel #productsView h1 { font-size:clamp(30px,8vw,36px) !important; }
-  #adminPanel #productsView > div:first-child > button { min-height:43px !important; }
-
-  /* Tarjetas de producto: datos primero y acciones en una fila inferior. */
-  #adminPanel #adminProducts .admin-item {
-    display:grid !important; grid-template-columns:64px minmax(0,1fr) !important;
-    grid-template-rows:auto auto !important; align-items:start !important; gap:9px 11px !important;
-    padding:11px !important; width:100% !important; min-width:0 !important; border-radius:12px !important;
-  }
-  #adminPanel #adminProducts .admin-item > .pic {
-    grid-column:1 !important; grid-row:1 !important; width:64px !important; height:64px !important;
-    min-width:64px !important; margin:0 !important; align-self:start !important; background:#f2efec !important;
-    border-radius:8px !important; overflow:hidden !important;
-  }
-  #adminPanel #adminProducts .admin-item > .grow {
-    grid-column:2 !important; grid-row:1 !important; width:100% !important; min-width:0 !important;
-    font-size:13px !important; line-height:1.3 !important; overflow-wrap:anywhere !important;
-  }
-  #adminPanel #adminProducts .admin-item > .grow b { font-size:15px !important; line-height:1.22 !important; margin-bottom:4px !important; }
-  #adminPanel #adminProducts .admin-item > .grow small { display:block !important; margin-top:3px !important; font-size:12px !important; line-height:1.4 !important; color:#6f6963 !important; }
-  #adminPanel #adminProducts .admin-item > button {
-    grid-row:2 !important; width:100% !important; min-width:0 !important; min-height:40px !important;
-    margin:0 !important; padding:8px 6px !important; font-size:12px !important; white-space:normal !important;
-  }
-  #adminPanel #adminProducts .admin-item > button:nth-of-type(1) { grid-column:1 !important; }
-  #adminPanel #adminProducts .admin-item > button:nth-of-type(2) { grid-column:2 !important; }
-  #adminPanel .size-inventory-card { padding:11px !important; }
-  #adminPanel .size-inventory-card > div:first-child { gap:8px !important; margin-bottom:10px !important; }
-  #adminPanel #refreshSizeInventory { min-height:37px !important; }
-}
-@media (min-width:701px) {
-  #adminPanel #adminProducts .admin-item > .pic { overflow:hidden; background:#f2efec; border-radius:8px; }
-  #adminPanel #adminProducts .admin-item > .pic img { display:block; object-fit:contain !important; }
+async function syncLocalCategoriesFromVisual(){
+  const cats = await getVisualCategories();
+  const active = cats.filter(c=>c.activo).sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0));
+  saveCats(["Todos", ...active.map(c=>c.nombre)]);
+  return cats;
 }
 
-</style>
-</head>
+async function renderVisualConfig(){
+  const catWrap=$("visualCategoriesList");
+  const brandWrap=$("visualBrandsList");
+  try{
+    const [cats,brands]=await Promise.all([getVisualCategories(),getVisualBrands()]);
+    setNextVisualOrders(cats, brands);
 
-<body class="admin-body">
+    if(catWrap){
+      catWrap.innerHTML = cats.map(c=>`<div class="admin-item"><img src="${c.imagen||''}" alt=""><div class="grow"><b>${c.etiqueta||c.nombre}</b><br><small>Destino: ${c.nombre} · Orden ${c.orden}</small></div><button onclick="toggleVisualCategory(${c.id},${!c.activo})">${c.activo?'Ocultar':'Mostrar'}</button></div>`).join("") || '<div class="empty">No hay categorías visuales.</div>';
+    }
+    if(brandWrap){
+      brandWrap.innerHTML = brands.map(b=>`<div class="admin-item"><img src="${b.imagen||''}" alt=""><div class="grow"><b>${b.nombre}</b><br><small>Orden ${b.orden} · ${b.destacada?'Destacada':'No destacada'}</small></div><button onclick="toggleVisualBrand(${b.id},${!b.activo})">${b.activo?'Ocultar':'Mostrar'}</button></div>`).join("") || '<div class="empty">No hay marcas visuales.</div>';
+    }
+  }catch(error){
+    const msg=`<div class="empty">Primero ejecuta tienda_visual.sql en Supabase. ${error.message}</div>`;
+    if(catWrap) catWrap.innerHTML=msg;
+    if(brandWrap) brandWrap.innerHTML=msg;
+  }
+}
+async function toggleVisualCategory(id,activo){
+  const {error}=await supabaseClient.from("tienda_categorias").update({activo}).eq("id",id);
+  if(error) return alert(error.message);
+  await renderVisualConfig();
+}
+async function toggleVisualBrand(id,activo){
+  const {error}=await supabaseClient.from("tienda_marcas").update({activo}).eq("id",id);
+  if(error) return alert(error.message);
+  await renderVisualConfig();
+}
+async function addVisualCategory(){
+  const nombre=$("visualCatName").value.trim();
+  const etiqueta=$("visualCatLabel").value.trim()||nombre;
+  const orden=Math.max(0,Number($("visualCatOrder").value)||1);
+  if(!nombre) return alert("Escribe el nombre de la categoría.");
+  try{
+    let imagen="";
+    const file=$("visualCatImage").files[0];
+    if(file) imagen=await uploadVisualImage(file);
+    const {error}=await supabaseClient.from("tienda_categorias").insert({nombre,etiqueta,imagen,orden,activo:true});
+    if(error) throw error;
+    $("visualCatName").value=""; $("visualCatLabel").value=""; $("visualCatImage").value="";
+    await syncLocalCategoriesFromVisual();
+    await renderCategoryBrands();
+    await renderVisualConfig();
+    alert("Categoría visual agregada. ✅");
+  }catch(error){ alert("No se pudo agregar: "+error.message); }
+}
+async function addVisualBrand(){
+  const nombre=$("visualBrandName").value.trim();
+  const orden=Math.max(0,Number($("visualBrandOrder").value)||1);
+  const destacada=$("visualBrandFeatured").checked;
+  if(!nombre) return alert("Escribe el nombre de la marca.");
+  try{
+    let imagen="";
+    const file=$("visualBrandImage").files[0];
+    if(file) imagen=await uploadVisualImage(file);
+    const {error}=await supabaseClient.from("tienda_marcas").insert({nombre,imagen,orden,destacada,activo:true});
+    if(error) throw error;
+    $("visualBrandName").value=""; $("visualBrandImage").value="";
+    await renderVisualConfig();
+    alert("Marca agregada. ✅");
+  }catch(error){ alert("No se pudo agregar: "+error.message); }
+}
 
-  <section id="loginScreen" class="auth-screen">
-    <div class="auth-box">
-      <div class="auth-logo">
-        <div class="mark">JS</div>
-        <small>TRENDY SHOP</small>
+// Botones de categorías y marcas visuales
+const saveVisualCatBtn = $("saveVisualCat");
+if(saveVisualCatBtn) saveVisualCatBtn.addEventListener("click", addVisualCategory);
+
+const saveVisualBrandBtn = $("saveVisualBrand");
+if(saveVisualBrandBtn) saveVisualBrandBtn.addEventListener("click", addVisualBrand);
+
+function money(n){
+  return n ? "$" + Number(n).toLocaleString("es-MX") : "Consultar";
+}
+
+function uiProduct(row){
+  return {
+    id: row.id,
+    name: row.nombre || "",
+    price: Number(row.precio) || 0,
+    category: row.categoria || "",
+    brand: row.marca || "",
+    model: row.modelo || "",
+    subcategory: row.subcategoria || "",
+    desc: row.descripcion || "",
+    offer: !!row.oferta,
+    image: row.imagen || "",
+    talla: row.talla || "",
+    stock: Number(row.stock) || 0,
+    activo: row.activo !== false
+  };
+}
+
+async function getProducts(){
+  const { data, error } = await supabaseClient
+    .from("productos")
+    .select("*")
+    .order("id", { ascending: false });
+
+  if(error) throw new Error(error.message);
+  return (data || []).map(uiProduct);
+}
+
+function getCats(){
+  const saved = JSON.parse(localStorage.getItem("jsCats") || "null");
+  return saved || DEFAULT_CATS;
+}
+
+function saveCats(x){
+  localStorage.setItem("jsCats", JSON.stringify(x));
+}
+
+async function getCategoryBrandRules(){
+  const { data, error } = await supabaseClient
+    .from("categoria_marcas")
+    .select("id,categoria,marca,activo")
+    .order("id", { ascending: true });
+  if(error) throw new Error(error.message);
+  return data || [];
+}
+
+async function getBrandsForCategory(category){
+  const name = String(category || "").trim();
+  if(!name) return [];
+  const { data, error } = await supabaseClient
+    .from("categoria_marcas")
+    .select("marca,activo")
+    .eq("categoria", name)
+    .eq("activo", true)
+    .order("id", { ascending: true });
+  if(error) throw new Error(error.message);
+  return (data || []).map(x => String(x.marca || "").trim()).filter(Boolean);
+}
+
+async function fillBrandOptions(selected = ""){
+  const select = $("pBrand");
+  if(!select) return;
+  const category = $("pCat").value;
+  try{
+    const brands = await getBrandsForCategory(category);
+    select.innerHTML = brands.length
+      ? `<option value="">Selecciona una marca</option>` + brands.map(b => `<option value="${b.replaceAll('"','&quot;')}">${b}</option>`).join("")
+      : `<option value="">Primero configura las marcas de esta categoría</option>`;
+    const match = brands.find(b => b.toLowerCase() === String(selected || "").toLowerCase());
+    select.value = match || "";
+  }catch(error){
+    console.error(error);
+    select.innerHTML = `<option value="">No se pudieron cargar las marcas</option>`;
+  }
+}
+
+async function saveCategoryBrands(category, brandsText){
+  const categoryName = String(category || "").trim();
+  const brands = [];
+  String(brandsText || "").split(",").forEach(v=>{
+    const label=v.trim();
+    if(label && !brands.some(x=>x.toLowerCase()===label.toLowerCase())) brands.push(label);
+  });
+
+  const { error: delError } = await supabaseClient
+    .from("categoria_marcas")
+    .delete()
+    .eq("categoria", categoryName);
+  if(delError) throw new Error(delError.message);
+
+  if(brands.length){
+    const rows=brands.map(marca=>({categoria:categoryName,marca,activo:true}));
+    const { error: insError } = await supabaseClient.from("categoria_marcas").insert(rows);
+    if(insError) throw new Error(insError.message);
+  }
+}
+
+async function renderCategoryBrands(){
+  const list=$("catList");
+  const cats=getCats().filter(c=>c!=="Todos");
+  let rules=[];
+  try{ rules=await getCategoryBrandRules(); }
+  catch(error){
+    list.innerHTML=`<div class="empty">No se pudo cargar la configuración de marcas: ${error.message}</div>`;
+    return;
+  }
+  const grouped={};
+  rules.forEach(r=>{
+    const key=String(r.categoria||"").toLowerCase();
+    if(!grouped[key]) grouped[key]=[];
+    grouped[key].push(r.marca);
+  });
+  list.innerHTML=cats.map(c=>{
+    const values=grouped[c.toLowerCase()]||[];
+    return `<div class="admin-item" style="display:block">
+      <div style="font-weight:700;margin-bottom:8px">${c}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input id="brands_${encodeURIComponent(c)}" class="search" style="flex:1;min-width:240px" value="${values.join(", ").replaceAll('"','&quot;')}" placeholder="Ej. Guess, Steve Madden, Michael Kors">
+        <button class="btn" onclick="saveBrandsForCategory('${c.replaceAll("'","\'")}')">Guardar marcas</button>
       </div>
+      <small class="hint">Solo las marcas escritas aquí podrán aparecer en esta categoría.</small>
+    </div>`;
+  }).join("") || '<div class="empty">Agrega una categoría primero.</div>';
+}
 
-      <h1>Acceso privado</h1>
-      <p>Inicia sesión para administrar los productos de tu tienda.</p>
+async function saveBrandsForCategory(category){
+  const input=$("brands_"+encodeURIComponent(category));
+  try{
+    await saveCategoryBrands(category, input?.value || "");
+    alert("Marcas guardadas para " + category + ".");
+    await renderCategoryBrands();
+    try{
+      const visualCats = await getVisualCategories();
+      if(visualCats.length){
+        saveCats(["Todos", ...visualCats.filter(c=>c.activo).sort((a,b)=>(a.orden||0)-(b.orden||0)).map(c=>c.nombre)]);
+      }
+    }catch(e){
+      console.warn("No se pudo sincronizar el catálogo de categorías visuales:", e.message);
+    }
+    await renderVisualConfig();
+  }catch(error){
+    console.error(error);
+    alert("No se pudieron guardar las marcas: " + error.message);
+  }
+}
 
-      <form id="loginForm">
-        <label>
-          Correo electrónico
-          <input id="loginEmail" type="email" autocomplete="username" required>
-        </label>
+function renderImage(url, name){
+  const fallback = `<span class="admin-no-photo">Sin foto</span>`;
+  return url
+    ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="width:100%;height:100%;object-fit:contain"><span class="admin-no-photo" style="display:none">Sin foto</span>`
+    : fallback;
+}
 
-        <label>
-          Contraseña
-          <input id="loginPassword" type="password" autocomplete="current-password" required>
-        </label>
+async function renderAdmin(){
+  try{
+    const ps = (await getProducts()).filter(p => p.activo);
 
-        <div id="loginMessage" style="display:none"></div>
-
-        <button id="loginButton" class="btn" type="submit">🔐 Iniciar sesión</button>
-      </form>
-    </div>
-  </section>
-
-  <section id="adminPanel">
-    <header class="admin-top">
-      <div>
-        <a href="index.html">← Ver tienda</a>
-        <strong>JS Trendy Shop · Administración</strong>
+    $("adminProducts").innerHTML = ps.map(p => `
+      <div class="admin-item">
+        <div class="pic" style="width:65px;height:65px">
+          ${renderImage(p.image, p.name)}
+        </div>
+        <div class="grow">
+          <b>${p.name}</b><br>
+          <small>${p.brand ? p.brand + " · " : ""}${p.category || "Sin categoría"}${p.model ? " · " + p.model : ""} · ${money(p.price)} · Tallas: ${p.talla || "—"} · Stock: ${p.stock}</small>
+        </div>
+        <button onclick="editProduct(${p.id})">Editar</button>
+        <button onclick="deleteProduct(${p.id})">Archivar</button>
       </div>
-      <div>
-        <span id="adminUser" class="admin-user"></span>
-        <button id="logoutButton" class="logout-btn">Cerrar sesión</button>
-      </div>
-    </header>
+    `).join("") || '<div class="empty">Todavía no tienes productos.</div>';
 
-    <main class="admin">
-      <aside class="admin-menu">
-        <button class="active" data-view="products">🛍️ Productos</button>
-        <button data-view="inventory">📦 Inventario</button>
-        <button data-view="archived">🗃️ Archivados</button>
-        <button data-view="categories" data-category-panel="list">🏷️ Categorías</button>
-        <button data-view="add-category" data-category-panel="add-category">➕ Agregar categoría</button>
-        <button data-view="add-brand" data-category-panel="add-brand">🏷️ Agregar marca</button>
-        <button data-view="settings">⚙️ Configuración</button>
-      </aside>
+    await renderCategoryBrands();
+  }catch(error){
+    console.error(error);
+    $("adminProducts").innerHTML =
+      `<div class="empty">No se pudieron cargar los productos: ${error.message}</div>`;
+  }
+}
 
-      <section>
-        <div id="productsView">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px">
-            <div>
-              <p class="kicker">ADMINISTRACIÓN</p>
-              <h1>Productos</h1>
-            </div>
-            <button id="newProduct" class="btn">+ Agregar producto</button>
-          </div>
-          <div id="adminProducts" class="admin-list"></div>
-        </div>
+function fillCats(selected = ""){
+  const cs = getCats().filter(c => c !== "Todos");
 
-        <div id="inventoryView" class="hidden">
-          <p class="kicker">CONTROL DE EXISTENCIAS</p>
-          <h1>Inventario</h1>
-          <p class="hint">Consulta producto, tallas y existencia actual. Las entradas y ajustes quedan registrados en el historial.</p>
-          <label style="display:block;margin:15px 0"><input id="inventorySearch" class="search" style="width:100%" placeholder="Buscar producto, marca, categoría o talla..."></label>
-          <div class="size-inventory-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 4px 14px"><div><h2 style="margin:0 0 5px">Inventario por talla</h2><p class="hint" style="margin:0">Cada fila representa una talla. Las acciones afectan únicamente esa talla.</p></div><button id="refreshSizeInventory" class="secondary" type="button">Actualizar</button></div><div id="sizeInventoryTable" class="size-inventory-scroll"></div></div>
-        </div>
+  $("pCat").innerHTML = cs.map(c =>
+    `<option value="${c.replaceAll('"','&quot;')}" ${c === selected ? "selected" : ""}>${c}</option>`
+  ).join("");
 
-        <div id="archivedView" class="hidden">
-          <p class="kicker">PRODUCTOS FUERA DEL CATÁLOGO</p>
-          <h1>Productos archivados</h1>
-          <p class="hint">Los productos archivados se conservan en la base de datos y puedes recuperarlos cuando quieras.</p>
-          <label style="display:block;margin:15px 0"><input id="archivedSearch" class="search" style="width:100%" placeholder="Buscar producto archivado..."></label>
-          <div id="archivedProducts" class="admin-list"></div>
-        </div>
+  if(!cs.length){
+    $("pCat").innerHTML = `<option value="">Sin categoría</option>`;
+  }
+}
 
-        <div id="categoriesView" class="hidden">
-          <p class="kicker">ORGANIZACIÓN</p>
-          <h1>Categorías</h1>
-          <p class="hint">Aquí puedes administrar cada parte por separado para mantener el panel limpio y fácil de usar.</p>
+function showPreview(url){
+  const preview = $("pImagePreview");
+  if(url){
+    preview.innerHTML = `<img src="${url}" alt="Vista previa">`;
+  }else{
+    preview.textContent = "Sin imagen";
+  }
+}
 
-          <div id="categoryListPanel" class="category-panel">
-            <div class="category-panel-title">
-              <div><p class="kicker">ADMINISTRAR</p><h2>Categorías</h2></div>
-            </div>
-            <p class="hint" style="margin:0 0 15px">Aquí decides qué marcas pueden aparecer dentro de cada categoría. Si una marca no está configurada aquí, no aparecerá como filtro aunque exista un producto con esa marca.</p>
-            <div id="catList" class="admin-list"></div>
-          </div>
+function publicImageUrl(path){
+  return supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+}
 
-          <div id="addCategoryPanel" class="category-panel hidden">
-            <div class="card visual-config-card" style="display:block">
-              <p class="kicker">NUEVA CATEGORÍA</p>
-              <h2 style="margin-top:0">Agregar categoría</h2>
-              <p class="hint">Crea una categoría nueva sin modificar el programa. El orden se calcula automáticamente y puedes cambiarlo si quieres.</p>
-              <div class="visual-admin-grid" style="grid-template-columns:1fr;max-width:620px">
-                <div>
-                  <label>Nombre real de la categoría<input id="visualCatName" class="search" placeholder="Ej. Accesorios"></label>
-                  <label>Texto del botón<input id="visualCatLabel" class="search" placeholder="Ej. Accesorios"></label>
-                  <label>Orden<input id="visualCatOrder" class="search" type="number" min="1" value="1"></label>
-                  <label>Imagen / icono<input id="visualCatImage" type="file" accept="image/*"></label>
-                  <button id="saveVisualCat" class="btn" type="button">+ Agregar categoría</button>
-                </div>
-              </div>
-              <div class="card" style="display:block;margin-top:22px">
-                <p class="kicker">CATEGORÍAS EXISTENTES</p>
-                <h3 style="margin:0 0 8px">Categorías de la tienda</h3>
-                <p class="hint">Aquí aparecen las categorías visuales que ya tienes. Puedes ocultarlas o mostrarlas sin salir de esta sección.</p>
-                <div id="visualCategoriesList" class="admin-list" style="margin-top:20px"></div>
-              </div>
-            </div>
-          </div>
+function storagePathFromPublicUrl(url){
+  if(!url) return null;
 
-          <div id="addBrandPanel" class="category-panel hidden">
-            <div class="card visual-config-card" style="display:block">
-              <p class="kicker">NUEVA MARCA</p>
-              <h2 style="margin-top:0">Agregar marca</h2>
-              <p class="hint">Agrega una marca para mostrarla en Marcas destacadas. El orden se calcula automáticamente y puedes cambiarlo.</p>
-              <div class="visual-admin-grid" style="grid-template-columns:1fr;max-width:620px">
-                <div>
-                  <label>Nombre de la marca<input id="visualBrandName" class="search" placeholder="Ej. New Balance"></label>
-                  <label>Orden<input id="visualBrandOrder" class="search" type="number" min="1" value="1"></label>
-                  <label>Logo / imagen<input id="visualBrandImage" type="file" accept="image/*"></label>
-                  <label class="check"><input id="visualBrandFeatured" type="checkbox" checked> Mostrar en Marcas destacadas</label>
-                  <button id="saveVisualBrand" class="btn" type="button">+ Agregar marca</button>
-                </div>
-              </div>
-              <div class="card" style="display:block;margin-top:22px">
-                <p class="kicker">MARCAS EXISTENTES</p>
-                <div id="visualBrandsList" class="admin-list"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+  const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+  const index = url.indexOf(marker);
 
-        <div id="settingsView" class="hidden">
-          <p class="kicker">CONFIGURACIÓN</p>
-          <h1>WhatsApp</h1>
-          <div class="card" style="display:block">
-            <label style="display:block;font-size:13px;font-weight:700">
-              Número de WhatsApp
-              <input id="wa" class="search" style="width:100%;margin-top:7px" value="6624262742">
-            </label>
-            <button id="saveWa" class="btn" style="margin-top:15px">Guardar WhatsApp</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </section>
+  if(index === -1) return null;
 
-  <div id="modal" class="modal hidden">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h2 id="modalTitle">Agregar producto</h2>
-        <button id="modalClose" class="x" type="button">×</button>
-      </div>
+  return decodeURIComponent(url.slice(index + marker.length));
+}
 
-      <label>
-        Nombre
-        <input id="pName" required>
-      </label>
+function safeFileName(name){
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "-");
+}
 
-      <label>
-        Precio
-        <input id="pPrice" type="number" min="0" step="0.01">
-      </label>
+async function uploadProductImage(file){
+  if(!file) return null;
 
-      <label>
-        Precio anterior <span class="hint">(solo para productos en oferta)</span>
-        <input id="pPreviousPrice" type="number" min="0" step="1" placeholder="Ej. 1,999">
-      </label>
+  if(!file.type.startsWith("image/")){
+    throw new Error("El archivo seleccionado no es una imagen.");
+  }
 
-      <label>
-        Categoría principal
-        <select id="pCat"></select>
-      </label>
+  const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${crypto.randomUUID()}-${safeFileName(file.name) || `imagen.${extension}`}`;
 
-      <label>
-        Marca
-        <select id="pBrand">
-          <option value="">Primero selecciona una categoría</option>
-        </select>
-        <span class="hint">Solo aparecerán las marcas configuradas para la categoría seleccionada.</span>
-      </label>
+  const { error } = await supabaseClient.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type
+    });
 
-      <label>
-        Modelo / nombre corto
-        <input id="pModel" placeholder="Ej. Air Max, Logo Classic, 3 Pack">
-      </label>
+  if(error) throw new Error(error.message);
 
-      <label>
-        Subcategoría
-        <input id="pSubcategory" placeholder="Ej. Sudaderas, Carteras, Boxer, Calcetas">
-      </label>
+  return {
+    path,
+    url: publicImageUrl(path)
+  };
+}
 
-      <label class="check">
-        <input id="pHasSizes" type="checkbox">
-        Este producto maneja tallas
-      </label>
+async function deleteStorageImage(url){
+  const path = storagePathFromPublicUrl(url);
+  if(!path) return;
 
-      <div id="sizeFields" style="display:none">
-        <label>
-          Tallas disponibles
-          <input id="pTalla" placeholder="Ej. S, M, L, XL o 7, 8, 9">
-          <span class="hint">Puedes escribir varias separadas por coma. Ejemplo: S, M, L, XL</span>
-        </label>
-      </div>
+  const { error } = await supabaseClient.storage
+    .from(STORAGE_BUCKET)
+    .remove([path]);
 
-      <label>
-        Stock
-        <input id="pStock" type="number" min="0" step="1" value="1">
-      </label>
+  if(error){
+    console.warn("No se pudo borrar la imagen anterior:", error);
+  }
+}
 
-      <label>
-        Descripción
-        <textarea id="pDesc" rows="4"></textarea>
-      </label>
+async function openModal(id = null){
+  editingId = id;
+  $("modal").classList.remove("hidden");
+  $("modalTitle").textContent = id ? "Editar producto" : "Agregar producto";
+  $("uploadStatus").textContent = "";
+  $("pImage").value = "";
 
-      <label class="check">
-        <input id="pOffer" type="checkbox">
-        Mostrar como oferta
-      </label>
+  let p = null;
 
-      <label>
-        Foto del producto
-        <input id="pImage" type="file" accept="image/*">
-        <div id="pImagePreview" class="image-preview">Sin imagen</div>
-        <div id="uploadStatus" class="upload-status"></div>
-      </label>
+  if(id){
+    try{
+      const { data, error } = await supabaseClient
+        .from("productos")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-      <button id="saveProduct" class="btn" type="button">Guardar producto</button>
-    </div>
-  </div>
+      if(error) throw error;
+      p = uiProduct(data);
+    }catch(error){
+      alert("No se pudo cargar el producto: " + error.message);
+      $("modal").classList.add("hidden");
+      editingId = null;
+      return;
+    }
+  }
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin-auth.js?v=20261009-2"></script>
-  <script src="admin.js?v=20261009-responsive2"></script>
-</body>
-</html>
+  fillCats(p?.category || getCats()[1] || "");
+
+  $("pName").value = p?.name || "";
+  $("pPrice").value = p?.price ?? "";
+  $("pPreviousPrice").value = p?.previousPrice ?? "";
+  await fillBrandOptions(p?.brand || "");
+  $("pModel").value = p?.model || "";
+  $("pSubcategory").value = p?.subcategory || "";
+  $("pTalla").value = p?.talla || "";
+  $("pStock").value = p?.stock ?? 1;
+  $("pDesc").value = p?.desc || "";
+  $("pOffer").checked = !!p?.offer;
+  $("pImage").dataset.currentUrl = p?.image || "";
+
+  showPreview(p?.image || "");
+
+  const hasSizes = !!(p?.talla || "").trim();
+  $("pHasSizes").checked = hasSizes;
+  $("sizeFields").style.display = hasSizes ? "" : "none";
+}
+
+$("newProduct").onclick = () => openModal();
+
+$("pCat").addEventListener("change", async () => {
+  await fillBrandOptions("");
+});
+
+$("pHasSizes").addEventListener("change", () => {
+  const enabled = $("pHasSizes").checked;
+  $("sizeFields").style.display = enabled ? "" : "none";
+  if(!enabled) $("pTalla").value = "";
+});
+
+$("modalClose").onclick = () => {
+  $("modal").classList.add("hidden");
+  editingId = null;
+};
+
+$("pImage").addEventListener("change", () => {
+  const file = $("pImage").files[0];
+  if(!file){
+    showPreview($("pImage").dataset.currentUrl || "");
+    return;
+  }
+
+  const previewUrl = URL.createObjectURL(file);
+  showPreview(previewUrl);
+  $("uploadStatus").textContent = "La imagen se subirá al guardar el producto.";
+});
+
+$("saveProduct").onclick = async () => {
+  const name = $("pName").value.trim();
+
+  if(!name){
+    alert("Escribe un nombre.");
+    return;
+  }
+
+  const button = $("saveProduct");
+  button.disabled = true;
+  button.textContent = "Guardando...";
+  $("uploadStatus").textContent = "";
+
+  let uploadedImage = null;
+  let oldImageUrl = "";
+
+  try{
+    if(editingId){
+      const { data, error } = await supabaseClient
+        .from("productos")
+        .select("imagen")
+        .eq("id", editingId)
+        .single();
+
+      if(error) throw error;
+      oldImageUrl = data?.imagen || "";
+    }
+
+    const file = $("pImage").files[0];
+
+    if(file){
+      $("uploadStatus").textContent = "Subiendo imagen...";
+      uploadedImage = await uploadProductImage(file);
+    }
+
+    const product = {
+      nombre: name,
+      descripcion: $("pDesc").value.trim(),
+      precio: Number($("pPrice").value) || 0,
+      precio_anterior: Number($("pPreviousPrice").value) || 0,
+      categoria: $("pCat").value || "",
+      marca: $("pBrand").value.trim(),
+      modelo: $("pModel").value.trim(),
+      subcategoria: $("pSubcategory").value.trim(),
+      talla: $("pHasSizes").checked ? $("pTalla").value.trim() : "",
+      stock: Math.max(0, Number($("pStock").value) || 0),
+      activo: true,
+      oferta: $("pOffer").checked
+    };
+
+    if(uploadedImage){
+      product.imagen = uploadedImage.url;
+    }
+
+    if(editingId){
+      const { error } = await supabaseClient
+        .from("productos")
+        .update(product)
+        .eq("id", editingId);
+
+      if(error){
+        if(uploadedImage) await deleteStorageImage(uploadedImage.url);
+        throw error;
+      }
+
+      if(uploadedImage && oldImageUrl){
+        await deleteStorageImage(oldImageUrl);
+      }
+    }else{
+      if(!uploadedImage){
+        product.imagen = "";
+      }
+
+      const { error } = await supabaseClient
+        .from("productos")
+        .insert(product);
+
+      if(error){
+        if(uploadedImage) await deleteStorageImage(uploadedImage.url);
+        throw error;
+      }
+    }
+
+    $("modal").classList.add("hidden");
+    editingId = null;
+    await renderAdmin();
+    alert("Producto guardado correctamente. ✅");
+  }catch(error){
+    console.error(error);
+    $("uploadStatus").textContent = "";
+    alert("No se pudo guardar el producto: " + error.message);
+  }finally{
+    button.disabled = false;
+    button.textContent = "Guardar producto";
+  }
+};
+
+async function editProduct(id){
+  await openModal(id);
+}
+
+async function deleteProduct(id){
+  const p = (await getProducts()).find(x => String(x.id) === String(id));
+  if(!p) return alert("No se encontró el producto.");
+  if(!confirm(`¿Archivar “${p.name}”?\n\nDejará de aparecer en el catálogo, pero se conservará con su inventario e historial para poder recuperarlo.`)) return;
+  try{
+    const { error } = await supabaseClient.from("productos").update({activo:false}).eq("id",id);
+    if(error) throw error;
+    try{ await logInventoryMovement({product:p,type:"archivo",quantity:0,before:p.stock,after:p.stock,reason:"Producto archivado"}); }
+    catch(logError){ alert(logError.message); }
+    await renderAdmin();
+    await renderInventory();
+    await renderArchived();
+    alert("Producto archivado. Puedes recuperarlo desde Productos archivados.");
+  }catch(error){
+    console.error(error);
+    alert("No se pudo archivar el producto: " + error.message);
+  }
+}
+
+function inventoryProductMarkup(p, archived=false){
+  const sizeText = (p.talla || "").trim() || "Sin tallas registradas";
+  const status = Number(p.stock) > 0 ? `${p.stock} unidades` : "Sin existencia";
+  return `<div class="admin-item inventory-row">
+    <div class="pic" style="width:65px;height:65px;flex:0 0 65px">${renderImage(p.image,p.name)}</div>
+    <div class="grow"><b>${p.name}</b><br><small>${p.brand ? p.brand+" · " : ""}${p.category || "Sin categoría"}${p.model ? " · "+p.model : ""}</small><br><small>Tallas: ${sizeText}</small><br><small><b>Existencia: ${status}</b></small></div>
+    ${archived ? `<button onclick="restoreProduct(${p.id})">Recuperar</button>` : `<button onclick="changeProductStock(${p.id},'entrada')">+ Entrada</button><button onclick="changeProductStock(${p.id},'ajuste')">Ajustar</button><button onclick="deleteProduct(${p.id})">Archivar</button>`}
+  </div>`;
+}
+
+async function ensureSizeRows(product){
+  const sizes=(product.talla||"").split(/[,/|]+/).map(x=>x.trim()).filter(Boolean);
+  if(!sizes.length) return;
+  const {data,error}=await supabaseClient.from("inventario_tallas").select("talla").eq("producto_id",product.id);
+  if(error) throw error;
+  const existing=new Set((data||[]).map(x=>String(x.talla).toLowerCase()));
+  const missing=sizes.filter(s=>!existing.has(s.toLowerCase()));
+  if(missing.length){const {error:e}=await supabaseClient.from("inventario_tallas").insert(missing.map(talla=>({producto_id:product.id,talla,stock:0,vendidas:0})));if(e)throw e;}
+}
+async function renderSizeInventory(){
+ const wrap=$("sizeInventoryTable"); if(!wrap)return;
+ try{
+  const query=String($("inventorySearch")?.value||"").trim().toLowerCase();
+  const products=(await getProducts()).filter(p=>p.activo);
+  for(const p of products) await ensureSizeRows(p);
+  const {data,error}=await supabaseClient.from("inventario_tallas").select("id,producto_id,talla,stock,vendidas").order("producto_id").order("talla");
+  if(error)throw error;
+  const rows=(data||[]).map(r=>({...r,product:products.find(p=>String(p.id)===String(r.producto_id))})).filter(r=>r.product).filter(r=>[r.product.name,r.product.brand,r.product.category,r.product.model,r.product.talla,r.talla].join(" ").toLowerCase().includes(query));
+  if(!rows.length){wrap.innerHTML='<div class="empty" style="padding:22px">No hay tallas que coincidan con la búsqueda. Revisa que el producto tenga tallas registradas.</div>';return;}
+  wrap.innerHTML=`<table class="size-inventory-table"><thead><tr><th>Imagen</th><th>Producto</th><th>Talla</th><th>Stock</th><th>Vendidas</th><th>Acciones</th></tr></thead><tbody>${rows.map(r=>{
+    const p=r.product;
+    const photo=p.image?`<img src="${p.image}" alt="Imagen de ${p.name}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\'inventory-empty-photo\'>Sin foto</span>'">`:'<span class="inventory-empty-photo">Sin foto</span>';
+    return `<tr><td data-label="Imagen"><div class="size-inventory-photo">${photo}</div></td><td data-label="Producto"><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td data-label="Talla"><b>${r.talla}</b></td><td data-label="Stock"><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td data-label="Vendidas">${Number(r.vendidas)||0}</td><td data-label="Acciones"><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button class="archive-size-btn" onclick="deleteProduct(${p.id})">Archivar</button></div></td></tr>`;
+  }).join('')}</tbody></table>`;
+ }catch(e){wrap.innerHTML=`<div class="empty" style="padding:20px">No se pudo cargar inventario por talla. Ejecuta inventario_tallas.sql en Supabase. ${e.message}</div>`;}
+}
+async function sizeStockAction(id,action){
+ try{
+  const {data:r,error}=await supabaseClient.from('inventario_tallas').select('*,productos(nombre)').eq('id',id).single();if(error)throw error;
+  let next,qty=0;
+  if(action==='venta'){const raw=prompt(`¿Cuántas piezas de talla ${r.talla} se vendieron?\nExistencia: ${r.stock}`);if(raw===null)return;if(!/^\d+$/.test(raw.trim())||Number(raw)<1||Number(raw)>r.stock)return alert('Cantidad no válida o mayor que la existencia.');qty=Number(raw);next=r.stock-qty;}
+  else if(action==='entrada'){const raw=prompt(`¿Cuántas piezas talla ${r.talla} entraron?`);if(raw===null)return;if(!/^\d+$/.test(raw.trim())||Number(raw)<1)return alert('Escribe una cantidad válida.');qty=Number(raw);next=r.stock+qty;}
+  else{const raw=prompt(`Existencia final para talla ${r.talla}:`,String(r.stock));if(raw===null)return;if(!/^\d+$/.test(raw.trim()))return alert('Escribe una cantidad igual o mayor que cero.');next=Number(raw);qty=next-r.stock;}
+  const motivo=prompt('Motivo (obligatorio):',action==='venta'?'Venta de talla '+r.talla:action==='entrada'?'Reposición talla '+r.talla:'Ajuste talla '+r.talla);if(motivo===null)return;if(!motivo.trim())return alert('El motivo es obligatorio.');
+  const {error:up}=await supabaseClient.from('inventario_tallas').update({stock:next,vendidas:Number(r.vendidas)+(action==='venta'?qty:0),updated_at:new Date().toISOString()}).eq('id',id);if(up)throw up;
+  const {error:log}=await supabaseClient.from('inventario_movimientos').insert({producto_id:r.producto_id,producto_nombre:(r.productos?.nombre||'Producto')+' · talla '+r.talla,tipo:action==='venta'?'venta':action==='entrada'?'entrada':'ajuste',cantidad:action==='venta'?-qty:qty,stock_anterior:r.stock,stock_nuevo:next,motivo:motivo.trim()});if(log)console.warn('Movimiento no guardado',log.message);
+  await renderSizeInventory();await renderInventoryHistory();
+ }catch(e){alert('No se pudo actualizar la talla: '+e.message);}
+}
+
+async function renderInventory(){
+  await renderSizeInventory();
+}
+
+async function renderArchived(){
+  const wrap=$("archivedProducts");
+  if(!wrap) return;
+  try{
+    const query=String($("archivedSearch")?.value||"").trim().toLowerCase();
+    const products=(await getProducts()).filter(p=>!p.activo).filter(p=>[p.name,p.brand,p.category,p.model,p.talla].join(" ").toLowerCase().includes(query));
+    wrap.innerHTML=products.map(p=>inventoryProductMarkup(p,true)).join("") || '<div class="empty">No hay productos archivados.</div>';
+  }catch(error){ wrap.innerHTML=`<div class="empty">No se pudieron cargar los productos archivados: ${error.message}</div>`; }
+}
+
+async function logInventoryMovement({product,type,quantity,before,after,reason}){
+  const {error}=await supabaseClient.from("inventario_movimientos").insert({
+    producto_id:product.id,
+    producto_nombre:product.name,
+    tipo:type,
+    cantidad:Number(quantity)||0,
+    stock_anterior:Number(before)||0,
+    stock_nuevo:Number(after)||0,
+    motivo:String(reason||"").trim()
+  });
+  if(error) throw new Error("La existencia se actualizó, pero no se pudo guardar el historial. Ejecuta inventario.sql en Supabase. Detalle: "+error.message);
+}
+
+async function changeProductStock(id,type){
+  try{
+    const product=(await getProducts()).find(p=>String(p.id)===String(id));
+    if(!product) throw new Error("No se encontró el producto.");
+    const label=type==="entrada" ? "¿Cuántas unidades entraron?" : `¿Cuál será la existencia final de “${product.name}”?`;
+    const raw=prompt(`${label}\nExistencia actual: ${product.stock}`);
+    if(raw===null) return;
+    if(raw.trim()==="" || !/^\d+$/.test(raw.trim())) return alert("Escribe una cantidad entera igual o mayor que cero.");
+    const value=Number(raw);
+    const next=type==="entrada" ? Number(product.stock)+value : value;
+    if(!Number.isSafeInteger(next) || next<0) return alert("La cantidad no es válida.");
+    if(type==="entrada" && value===0) return alert("La entrada debe ser mayor que cero.");
+    const reason=prompt("Motivo del movimiento (obligatorio):",type==="entrada"?"Reposición de mercancía":"Ajuste de inventario");
+    if(reason===null) return;
+    if(!reason.trim()) return alert("Escribe el motivo para guardar el movimiento.");
+    const {error}=await supabaseClient.from("productos").update({stock:next}).eq("id",id);
+    if(error) throw error;
+    try{
+      await logInventoryMovement({product,type,quantity:type==="entrada"?value:next-Number(product.stock),before:product.stock,after:next,reason});
+    }catch(logError){
+      alert(logError.message);
+    }
+    await renderAdmin();
+    await renderInventory();
+    await renderArchived();
+  }catch(error){ console.error(error); alert("No se pudo actualizar la existencia: "+error.message); }
+}
+
+async function restoreProduct(id){
+  try{
+    const product=(await getProducts()).find(p=>String(p.id)===String(id));
+    if(!product) throw new Error("No se encontró el producto.");
+    if(!confirm(`¿Recuperar “${product.name}” y volver a activarlo en el catálogo?`)) return;
+    const {error}=await supabaseClient.from("productos").update({activo:true}).eq("id",id);
+    if(error) throw error;
+    try{ await logInventoryMovement({product,type:"recuperacion",quantity:0,before:product.stock,after:product.stock,reason:"Producto recuperado del archivo"}); }
+    catch(logError){ alert(logError.message); }
+    await renderAdmin(); await renderInventory(); await renderArchived();
+    alert("Producto recuperado. Si tiene existencia mayor que cero, volverá a aparecer en el catálogo.");
+  }catch(error){ console.error(error); alert("No se pudo recuperar el producto: "+error.message); }
+}
+
+async function renderInventoryHistory(){
+  const wrap=$("inventoryHistory");
+  if(!wrap) return;
+  try{
+    const {data,error}=await supabaseClient.from("inventario_movimientos").select("id,producto_nombre,tipo,cantidad,stock_anterior,stock_nuevo,motivo,created_at").order("created_at",{ascending:false}).limit(100);
+    if(error) throw error;
+    wrap.innerHTML=(data||[]).map(m=>`<div class="admin-item" style="align-items:flex-start"><div class="grow"><b>${m.producto_nombre||"Producto"}</b><br><small>${new Date(m.created_at).toLocaleString("es-MX")} · ${m.tipo}</small><br><small>Existencia: ${m.stock_anterior} → ${m.stock_nuevo} · Cambio: ${m.cantidad>0?"+":""}${m.cantidad}</small><br><small>Motivo: ${m.motivo||"—"}</small></div></div>`).join("") || '<div class="empty">Todavía no hay movimientos registrados.</div>';
+  }catch(error){ wrap.innerHTML=`<div class="empty">No se pudo cargar el historial. Comprueba que ejecutaste inventario.sql en Supabase. ${error.message}</div>`; }
+}
+
+$("saveWa").onclick = () => {
+  const n = $("wa").value.replace(/\D/g, "");
+
+  if(n.length < 10){
+    return alert("Revisa el número.");
+  }
+
+  localStorage.setItem("jsWhatsApp", n);
+  alert("WhatsApp guardado.");
+};
+
+function showCategoryPanel(name){
+  const panels={
+    list:"categoryListPanel",
+    "add-category":"addCategoryPanel",
+    "add-brand":"addBrandPanel"
+  };
+  Object.values(panels).forEach(id=>$(id)?.classList.add("hidden"));
+  $(panels[name])?.classList.remove("hidden");
+
+  if(name==="list"){
+    renderCategoryBrands();
+    renderVisualConfig();
+  }else if(name==="add-category" || name==="add-brand"){
+    renderVisualConfig();
+  }
+}
+
+// Menú principal: Productos, Categorías, Agregar categoría, Agregar marca y Configuración
+document.querySelectorAll(".admin-menu > button").forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll(".admin-menu > button")
+      .forEach(x => x.classList.remove("active"));
+
+    b.classList.add("active");
+
+    ["products","categories","settings","inventory","archived"].forEach(v =>
+      $(v + "View")?.classList.add("hidden")
+    );
+
+    const panel = b.dataset.categoryPanel;
+    if(panel){
+      $("categoriesView")?.classList.remove("hidden");
+      showCategoryPanel(panel);
+    }else{
+      $(b.dataset.view + "View")?.classList.remove("hidden");
+      if(b.dataset.view === "inventory") renderInventory();
+      if(b.dataset.view === "archived") renderArchived();
+    }
+  };
+});
+
+// Búsquedas y actualización manual de inventario.
+$("inventorySearch")?.addEventListener("input", renderInventory);
+$("refreshSizeInventory")?.addEventListener("click", renderInventory);
+$("archivedSearch")?.addEventListener("input", renderArchived);
+$("refreshInventoryHistory")?.addEventListener("click", renderInventoryHistory);
+
+// Al cargar el administrador, solo Productos queda seleccionado.
+$("categoriesView")?.classList.add("hidden");
+$("inventoryView")?.classList.add("hidden");
+$("archivedView")?.classList.add("hidden");
+
+renderAdmin();
