@@ -511,6 +511,9 @@ async function openDetail(id){
   const description=p.desc?`<p>${esc(p.desc)}</p>`:'';
   document.getElementById("detailContent").innerHTML=`<div class="detail-image">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Sin imagen'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}${description}${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad" ${sizes.length?'disabled':''}>−</button><input id="detailQuantity" type="number" min="1" max="${Math.max(0,available)}" value="1" onchange="onDetailQuantityChange(this.value)" ${sizes.length?'disabled':''}><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad" ${sizes.length?'disabled':''}>+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?'Selecciona una talla':'Actualmente agotado'}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${sizes.length||available<=0?'disabled':''}>Agregar al carrito</button></div>`;
   document.getElementById("detailModal").classList.remove("hidden");
+  // Seleccionar la primera talla con existencias para habilitar cantidad y carrito.
+  const firstAvailableSize = sizes.find(s => sizeStockFor(p.id, s) > 0);
+  if (firstAvailableSize) onDetailSizeChange(firstAvailableSize);
 }
 function onDetailSizeChange(size){
   const p=products.find(x=>String(x.id)===String(detailId));
