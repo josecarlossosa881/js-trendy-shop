@@ -1,441 +1,107 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>JS Trendy Shop | Administrador</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="admin-responsive.css?v=20261009-5">
-  <style>
-    .auth-screen{min-height:100vh;display:grid;place-items:center;padding:25px;background:#f5f3f1}
-    .auth-box{width:min(430px,100%);background:#fff;border:1px solid #ddd8d4;border-radius:10px;padding:32px;box-shadow:0 12px 35px #00000012}
-    .auth-logo{text-align:center;margin-bottom:25px}
-    .auth-logo .mark{font:52px Georgia,serif}
-    .auth-logo small{display:block;font-size:10px;font-weight:700;letter-spacing:.18em;margin-top:8px}
-    .auth-box h1{font:500 32px Georgia,serif;margin:0 0 8px}
-    .auth-box p{color:#666;line-height:1.5}
-    .auth-box label{display:block;font-size:13px;font-weight:700;margin:18px 0}
-    .auth-box input{width:100%;padding:13px;border:1px solid #ccc;border-radius:5px;font:inherit;margin-top:7px}
-    .auth-box button{width:100%;margin-top:8px}
-    .auth-error{color:#a40000!important;background:#fff1f1;border:1px solid #f0cccc;border-radius:5px;padding:10px;font-size:13px}
-    .auth-success{color:#176b35!important;background:#effaf2;border:1px solid #ccebd4;border-radius:5px;padding:10px;font-size:13px}
-    #adminPanel{display:none}
-    .admin-user{font-size:13px;color:#666}
-    .logout-btn{border:1px solid #ccc;background:#fff;padding:9px 13px;border-radius:4px;cursor:pointer}
-    .image-preview{width:110px;height:110px;background:#eee;border-radius:6px;overflow:hidden;display:grid;place-items:center;color:#777;font-size:12px;margin-top:8px}
-    .image-preview img{width:100%;height:100%;object-fit:cover}
-    .upload-status{font-size:12px;color:#666;margin-top:8px}
-    .visual-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:20px}
-    .visual-admin-grid>div{border:1px solid #e5e0dc;border-radius:8px;padding:18px;background:#faf9f7}
-    .visual-admin-grid h3{margin:0 0 15px}
-    .visual-admin-grid label{display:block;font-size:13px;font-weight:700;margin:12px 0}
-    .visual-admin-grid .search{width:100%;margin-top:6px}
-    .visual-config-card .admin-item img{width:58px;height:58px;object-fit:cover;border-radius:50%;background:#eee}
+const SUPABASE_URL = "https://fafryvpzvewbwjgznzsg.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_l4iQHwmQpCOPnoe7JBcK4w_soduEaIy";
+const ADMIN_UID = "d388d8a5-e1a5-44ce-a498-5fe297019d7e";
 
-    .category-side-nav{display:none;margin:-4px 0 10px 12px;padding:4px 0 2px 12px;border-left:1px solid #d8d2cd}
-    .category-side-nav.open{display:block}
-    .category-side-nav button{display:block;width:100%;text-align:left;border:0;background:transparent;color:#555;padding:9px 12px;border-radius:5px;cursor:pointer;font:inherit;font-size:13px;font-weight:700}
-    .category-side-nav button:hover{background:#f2efec;color:#222}
-    .category-side-nav button.active{background:#eeeae6;color:#222}
-    .category-panel.hidden{display:none}
-    .category-panel-title{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
-    .category-panel-title h2{margin:0}
-    .inventory-row{flex-wrap:wrap}
-    .inventory-row .grow{min-width:170px}
-    .inventory-row button{flex:0 0 auto}
-    .size-inventory-card{display:block;background:#fff;border:1px solid #e8e3df;border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 5px 18px #20160e08}
-    .size-inventory-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}
-    .size-inventory-table{width:100%;border-collapse:separate;border-spacing:0;min-width:850px;font-size:14px}
-    .size-inventory-table th{background:#f7f5f2;color:#5b554f;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:13px 12px;white-space:nowrap}
-    .size-inventory-table th:first-child{border-radius:8px 0 0 8px}.size-inventory-table th:last-child{border-radius:0 8px 8px 0}
-    .size-inventory-table td{padding:11px 12px;border-bottom:1px solid #eee9e4;vertical-align:middle}
-    .size-inventory-table tbody tr:last-child td{border-bottom:0}
-    .size-inventory-table tbody tr:hover{background:#fcfbfa}
-    .size-inventory-product{display:flex;align-items:center;gap:11px;min-width:220px}
-    .size-inventory-photo{width:54px;height:54px;flex:0 0 54px;border-radius:8px;overflow:hidden;background:#f0eeeb;display:grid;place-items:center;color:#999;font-size:10px}
-    .size-inventory-photo img{width:100%;height:100%;object-fit:cover;display:block}
-    .size-inventory-name{font-weight:700;color:#24211f;line-height:1.3}
-    .size-inventory-meta{font-size:11px;color:#777;margin-top:4px}
-    .size-stock-number{display:inline-block;min-width:32px;text-align:center;font-weight:800;padding:5px 9px;border-radius:7px;background:#f3f1ee}
-    .size-stock-number.zero{color:#a43b31;background:#fff0ee}
-    .size-inventory-actions{display:flex;gap:6px;align-items:center;white-space:nowrap}
-    .size-inventory-actions button{padding:7px 9px;font-size:12px;border-radius:6px;cursor:pointer}
-    .size-inventory-actions .archive-size-btn{border:1px solid #e4c8c4;color:#9a3b32;background:#fff8f7}
-    .inventory-empty-photo{font-size:10px;color:#888;text-align:center}
-    @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}.size-inventory-card{padding:8px}.size-inventory-table{min-width:790px}}
-    @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}}
-  
-/* Ajustes responsive integrados para que funcionen aunque el CSS externo esté en caché. */
-@media (max-width: 700px) {
-  html, body.admin-body { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
-  #adminPanel { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
-  #adminPanel .admin-top {
-    display:flex !important; flex-direction:column !important; align-items:stretch !important;
-    gap:10px !important; padding:12px 14px !important; width:100% !important;
-  }
-  #adminPanel .admin-top > div {
-    display:flex !important; width:100% !important; min-width:0 !important;
-    align-items:center !important; justify-content:space-between !important; flex-wrap:wrap !important; gap:8px !important;
-  }
-  #adminPanel .admin-top > div:first-child a { font-size:13px !important; }
-  #adminPanel .admin-top strong { margin:0 !important; font-size:14px !important; }
-  #adminPanel .admin-user { font-size:12px !important; max-width:100% !important; overflow-wrap:anywhere !important; }
-  #adminPanel .logout-btn { padding:8px 10px !important; min-height:40px !important; }
-  #adminPanel .admin {
-    display:grid !important; grid-template-columns:minmax(0,1fr) !important;
-    gap:12px !important; width:100% !important; max-width:100% !important; padding:12px !important; margin:0 !important;
-  }
-  #adminPanel .admin > section, #adminPanel .admin-menu { width:100% !important; min-width:0 !important; max-width:100% !important; }
-  #adminPanel .admin-menu {
-    display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    gap:7px !important; padding:10px !important; overflow:visible !important;
-  }
-  #adminPanel .admin-menu > button {
-    display:block !important; width:100% !important; min-width:0 !important; max-width:100% !important;
-    min-height:44px !important; padding:10px 8px !important; font-size:13px !important;
-    line-height:1.25 !important; white-space:normal !important; overflow-wrap:anywhere !important;
-  }
-  #adminPanel h1, #adminPanel #productsView h1, #adminPanel #inventoryView h1,
-  #adminPanel #archivedView h1, #adminPanel #categoriesView h1, #adminPanel #settingsView h1 {
-    font-size:clamp(30px,8vw,40px) !important; line-height:1.08 !important;
-    margin:4px 0 12px !important; overflow-wrap:anywhere !important;
-  }
-  #adminPanel .hint { font-size:14px !important; line-height:1.45 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
-  #adminPanel #inventoryView { min-width:0 !important; width:100% !important; max-width:100% !important; }
-  #adminPanel #inventoryView > label { display:block !important; width:100% !important; margin:12px 0 !important; }
-  #adminPanel #inventorySearch { display:block !important; width:100% !important; max-width:100% !important; min-width:0 !important; font-size:14px !important; }
-  #adminPanel .size-inventory-card { width:100% !important; max-width:100% !important; min-width:0 !important; padding:10px !important; overflow:hidden !important; }
-  #adminPanel .size-inventory-card > div:first-child { align-items:flex-start !important; }
-  #adminPanel .size-inventory-card h2 { font-size:20px !important; line-height:1.2 !important; }
-  #adminPanel .size-inventory-scroll { width:100% !important; max-width:100% !important; overflow:visible !important; }
-  #adminPanel .size-inventory-table { display:block !important; width:100% !important; min-width:0 !important; max-width:100% !important; table-layout:fixed !important; border-collapse:separate !important; border-spacing:0 !important; }
-  #adminPanel .size-inventory-table thead { display:none !important; }
-  #adminPanel .size-inventory-table tbody { display:block !important; width:100% !important; }
-  #adminPanel .size-inventory-table tbody tr {
-    display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
-    gap:0 10px !important; width:100% !important; min-width:0 !important;
-    padding:12px 10px !important; margin:0 0 10px !important;
-    border:1px solid #e9e3de !important; border-radius:10px !important; background:#fff !important;
-  }
-  #adminPanel .size-inventory-table tbody td {
-    display:flex !important; align-items:center !important; justify-content:space-between !important;
-    gap:8px !important; width:auto !important; min-width:0 !important; padding:7px 0 !important;
-    border:0 !important; font-size:13px !important; overflow-wrap:anywhere !important;
-  }
-  #adminPanel .size-inventory-table tbody td::before {
-    content:attr(data-label); flex:0 0 auto; color:#77716b; font-size:10px;
-    font-weight:800; letter-spacing:.04em; text-transform:uppercase;
-  }
-  #adminPanel .size-inventory-table tbody td:nth-child(1) { grid-column:1 !important; grid-row:1 !important; justify-content:flex-start !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(1)::before { content:none !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2) { grid-column:1 / -1 !important; grid-row:2 !important; justify-content:flex-start !important; padding-top:2px !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2)::before { content:none !important; }
-  #adminPanel .size-inventory-product { display:flex !important; min-width:0 !important; gap:8px !important; }
-  #adminPanel .size-inventory-name { font-size:14px !important; overflow-wrap:anywhere !important; }
-  #adminPanel .size-inventory-meta { font-size:11px !important; overflow-wrap:anywhere !important; }
-  #adminPanel .size-inventory-photo { width:48px !important; height:48px !important; flex:0 0 48px !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(3) { grid-column:1 !important; grid-row:3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(4) { grid-column:2 !important; grid-row:3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(5) { grid-column:1 / -1 !important; grid-row:4 !important; justify-content:flex-start !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(6) { grid-column:1 / -1 !important; grid-row:5 !important; display:block !important; padding-top:10px !important; border-top:1px solid #f0ece8 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(6)::before { content:'ACCIONES' !important; display:block !important; margin-bottom:8px !important; }
-  #adminPanel .size-inventory-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; white-space:normal !important; }
-  #adminPanel .size-inventory-actions button { width:100% !important; min-width:0 !important; min-height:42px !important; padding:9px 7px !important; font-size:12px !important; white-space:normal !important; }
-  #adminPanel #productsView > div:first-child { align-items:flex-start !important; flex-wrap:wrap !important; gap:10px !important; }
-  #adminPanel #productsView > div:first-child > button { width:100% !important; min-height:44px !important; }
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+const loginScreen = document.getElementById("loginScreen");
+const adminPanel = document.getElementById("adminPanel");
+const loginForm = document.getElementById("loginForm");
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+const loginButton = document.getElementById("loginButton");
+const loginMessage = document.getElementById("loginMessage");
+const adminUser = document.getElementById("adminUser");
+const logoutButton = document.getElementById("logoutButton");
+
+function showLoginMessage(message, type = "error") {
+  loginMessage.style.display = "block";
+  loginMessage.className = type === "success" ? "auth-success" : "auth-error";
+  loginMessage.textContent = message;
 }
 
-  
-/* Pulido final basado en las capturas reales del administrador en móvil. */
-@media (max-width: 700px) {
-  #adminPanel .admin-top {
-    box-sizing:border-box !important; padding:10px 14px !important; gap:7px !important;
-    border-bottom:1px solid #e8e2dd !important;
-  }
-  #adminPanel .admin-top > div:first-child {
-    display:grid !important; grid-template-columns:auto minmax(0,1fr) !important;
-    align-items:center !important; gap:12px !important;
-  }
-  #adminPanel .admin-top > div:first-child a { white-space:nowrap !important; font-size:13px !important; }
-  #adminPanel .admin-top strong { display:block !important; font-size:15px !important; line-height:1.2 !important; overflow-wrap:normal !important; }
-  #adminPanel .admin-top > div:last-child { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; align-items:center !important; gap:10px !important; }
-  #adminPanel .admin-user { min-width:0 !important; font-size:12px !important; line-height:1.3 !important; overflow-wrap:anywhere !important; }
-  #adminPanel .logout-btn { white-space:nowrap !important; font-size:12px !important; padding:8px 10px !important; }
-  #adminPanel .admin { padding:10px 12px 20px !important; gap:10px !important; }
-  #adminPanel .admin-menu { padding:8px !important; gap:5px !important; border-radius:12px !important; }
-  #adminPanel .admin-menu > button { font-size:12px !important; min-height:40px !important; padding:8px 6px !important; border-radius:8px !important; }
-  #adminPanel .kicker { font-size:10px !important; letter-spacing:.15em !important; margin-bottom:8px !important; }
-  #adminPanel #inventoryView h1 { font-size:36px !important; margin:0 0 10px !important; }
-  #adminPanel #inventoryView > .hint { font-size:14px !important; line-height:1.4 !important; margin:0 0 12px !important; }
-  #adminPanel #inventoryView > label { margin:10px 0 !important; }
-  #adminPanel #inventorySearch { padding:13px 14px !important; min-height:46px !important; }
-  #adminPanel .size-inventory-card { margin-top:10px !important; padding:12px !important; border-radius:14px !important; }
-  #adminPanel .size-inventory-card > div:first-child { display:flex !important; flex-direction:column !important; gap:10px !important; margin:0 0 12px !important; }
-  #adminPanel .size-inventory-card h2 { font-size:20px !important; margin-bottom:5px !important; }
-  #adminPanel .size-inventory-card .hint { font-size:13px !important; line-height:1.4 !important; }
-  #adminPanel #refreshSizeInventory { align-self:flex-start !important; min-height:38px !important; padding:8px 12px !important; }
-  #adminPanel .size-inventory-table tbody tr {
-    grid-template-columns:56px minmax(0,1fr) !important; gap:0 10px !important;
-    padding:10px !important; margin-bottom:9px !important; border-radius:12px !important;
-  }
-  #adminPanel .size-inventory-table tbody td { padding:5px 0 !important; font-size:12px !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(1) { grid-column:1 !important; grid-row:1 !important; align-self:start !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2) { grid-column:2 !important; grid-row:1 !important; align-self:center !important; padding:0 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(2)::before { content:none !important; }
-  #adminPanel .size-inventory-photo { width:52px !important; height:58px !important; flex-basis:52px !important; }
-  #adminPanel .size-inventory-name { font-size:14px !important; line-height:1.25 !important; }
-  #adminPanel .size-inventory-meta { font-size:11px !important; line-height:1.3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(3) { grid-column:1 !important; grid-row:2 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(4) { grid-column:2 !important; grid-row:2 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(5) { grid-column:1 / -1 !important; grid-row:3 !important; }
-  #adminPanel .size-inventory-table tbody td:nth-child(6) { grid-column:1 / -1 !important; grid-row:4 !important; padding-top:8px !important; }
-  #adminPanel .size-inventory-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; }
-  #adminPanel .size-inventory-actions button { min-height:39px !important; padding:7px 5px !important; font-size:12px !important; }
+function showPanel(user) {
+  loginScreen.style.display = "none";
+  adminPanel.style.display = "block";
+  adminUser.textContent = user?.email || "";
+  if (typeof renderAdmin === "function") renderAdmin();
 }
 
-</style>
-</head>
+function showLogin() {
+  loginScreen.style.display = "grid";
+  adminPanel.style.display = "none";
+  adminUser.textContent = "";
+}
 
-<body class="admin-body">
+async function checkSession() {
+  const { data, error } = await supabaseClient.auth.getSession();
 
-  <section id="loginScreen" class="auth-screen">
-    <div class="auth-box">
-      <div class="auth-logo">
-        <div class="mark">JS</div>
-        <small>TRENDY SHOP</small>
-      </div>
+  if (error || !data.session) {
+    showLogin();
+    return;
+  }
 
-      <h1>Acceso privado</h1>
-      <p>Inicia sesión para administrar los productos de tu tienda.</p>
+  const user = data.session.user;
 
-      <form id="loginForm">
-        <label>
-          Correo electrónico
-          <input id="loginEmail" type="email" autocomplete="username" required>
-        </label>
+  if (user.id !== ADMIN_UID) {
+    await supabaseClient.auth.signOut();
+    showLoginMessage("Esta cuenta no tiene permisos de administrador.");
+    return;
+  }
 
-        <label>
-          Contraseña
-          <input id="loginPassword" type="password" autocomplete="current-password" required>
-        </label>
+  showPanel(user);
+}
 
-        <div id="loginMessage" style="display:none"></div>
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-        <button id="loginButton" class="btn" type="submit">🔐 Iniciar sesión</button>
-      </form>
-    </div>
-  </section>
+  loginButton.disabled = true;
+  loginButton.textContent = "Entrando...";
+  loginMessage.style.display = "none";
 
-  <section id="adminPanel">
-    <header class="admin-top">
-      <div>
-        <a href="index.html">← Ver tienda</a>
-        <strong>JS Trendy Shop · Administración</strong>
-      </div>
-      <div>
-        <span id="adminUser" class="admin-user"></span>
-        <button id="logoutButton" class="logout-btn">Cerrar sesión</button>
-      </div>
-    </header>
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
 
-    <main class="admin">
-      <aside class="admin-menu">
-        <button class="active" data-view="products">🛍️ Productos</button>
-        <button data-view="inventory">📦 Inventario</button>
-        <button data-view="archived">🗃️ Archivados</button>
-        <button data-view="categories" data-category-panel="list">🏷️ Categorías</button>
-        <button data-view="add-category" data-category-panel="add-category">➕ Agregar categoría</button>
-        <button data-view="add-brand" data-category-panel="add-brand">🏷️ Agregar marca</button>
-        <button data-view="settings">⚙️ Configuración</button>
-      </aside>
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
 
-      <section>
-        <div id="productsView">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px">
-            <div>
-              <p class="kicker">ADMINISTRACIÓN</p>
-              <h1>Productos</h1>
-            </div>
-            <button id="newProduct" class="btn">+ Agregar producto</button>
-          </div>
-          <div id="adminProducts" class="admin-list"></div>
-        </div>
+  if (error) {
+    showLoginMessage("Correo o contraseña incorrectos.");
+    loginButton.disabled = false;
+    loginButton.textContent = "🔐 Iniciar sesión";
+    return;
+  }
 
-        <div id="inventoryView" class="hidden">
-          <p class="kicker">CONTROL DE EXISTENCIAS</p>
-          <h1>Inventario</h1>
-          <p class="hint">Consulta producto, tallas y existencia actual. Las entradas y ajustes quedan registrados en el historial.</p>
-          <label style="display:block;margin:15px 0"><input id="inventorySearch" class="search" style="width:100%" placeholder="Buscar producto, marca, categoría o talla..."></label>
-          <div class="size-inventory-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 4px 14px"><div><h2 style="margin:0 0 5px">Inventario por talla</h2><p class="hint" style="margin:0">Cada fila representa una talla. Las acciones afectan únicamente esa talla.</p></div><button id="refreshSizeInventory" class="secondary" type="button">Actualizar</button></div><div id="sizeInventoryTable" class="size-inventory-scroll"></div></div>
-        </div>
+  if (!data.user || data.user.id !== ADMIN_UID) {
+    await supabaseClient.auth.signOut();
+    showLoginMessage("Esta cuenta no tiene permisos de administrador.");
+    loginButton.disabled = false;
+    loginButton.textContent = "🔐 Iniciar sesión";
+    return;
+  }
 
-        <div id="archivedView" class="hidden">
-          <p class="kicker">PRODUCTOS FUERA DEL CATÁLOGO</p>
-          <h1>Productos archivados</h1>
-          <p class="hint">Los productos archivados se conservan en la base de datos y puedes recuperarlos cuando quieras.</p>
-          <label style="display:block;margin:15px 0"><input id="archivedSearch" class="search" style="width:100%" placeholder="Buscar producto archivado..."></label>
-          <div id="archivedProducts" class="admin-list"></div>
-        </div>
+  showPanel(data.user);
 
-        <div id="categoriesView" class="hidden">
-          <p class="kicker">ORGANIZACIÓN</p>
-          <h1>Categorías</h1>
-          <p class="hint">Aquí puedes administrar cada parte por separado para mantener el panel limpio y fácil de usar.</p>
+  loginButton.disabled = false;
+  loginButton.textContent = "🔐 Iniciar sesión";
+});
 
-          <div id="categoryListPanel" class="category-panel">
-            <div class="category-panel-title">
-              <div><p class="kicker">ADMINISTRAR</p><h2>Categorías</h2></div>
-            </div>
-            <p class="hint" style="margin:0 0 15px">Aquí decides qué marcas pueden aparecer dentro de cada categoría. Si una marca no está configurada aquí, no aparecerá como filtro aunque exista un producto con esa marca.</p>
-            <div id="catList" class="admin-list"></div>
-          </div>
+logoutButton.addEventListener("click", async () => {
+  await supabaseClient.auth.signOut();
+  showLogin();
+  loginPassword.value = "";
+  showLoginMessage("Sesión cerrada.", "success");
+});
 
-          <div id="addCategoryPanel" class="category-panel hidden">
-            <div class="card visual-config-card" style="display:block">
-              <p class="kicker">NUEVA CATEGORÍA</p>
-              <h2 style="margin-top:0">Agregar categoría</h2>
-              <p class="hint">Crea una categoría nueva sin modificar el programa. El orden se calcula automáticamente y puedes cambiarlo si quieres.</p>
-              <div class="visual-admin-grid" style="grid-template-columns:1fr;max-width:620px">
-                <div>
-                  <label>Nombre real de la categoría<input id="visualCatName" class="search" placeholder="Ej. Accesorios"></label>
-                  <label>Texto del botón<input id="visualCatLabel" class="search" placeholder="Ej. Accesorios"></label>
-                  <label>Orden<input id="visualCatOrder" class="search" type="number" min="1" value="1"></label>
-                  <label>Imagen / icono<input id="visualCatImage" type="file" accept="image/*"></label>
-                  <button id="saveVisualCat" class="btn" type="button">+ Agregar categoría</button>
-                </div>
-              </div>
-              <div class="card" style="display:block;margin-top:22px">
-                <p class="kicker">CATEGORÍAS EXISTENTES</p>
-                <h3 style="margin:0 0 8px">Categorías de la tienda</h3>
-                <p class="hint">Aquí aparecen las categorías visuales que ya tienes. Puedes ocultarlas o mostrarlas sin salir de esta sección.</p>
-                <div id="visualCategoriesList" class="admin-list" style="margin-top:20px"></div>
-              </div>
-            </div>
-          </div>
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  if (!session) {
+    showLogin();
+  }
+});
 
-          <div id="addBrandPanel" class="category-panel hidden">
-            <div class="card visual-config-card" style="display:block">
-              <p class="kicker">NUEVA MARCA</p>
-              <h2 style="margin-top:0">Agregar marca</h2>
-              <p class="hint">Agrega una marca para mostrarla en Marcas destacadas. El orden se calcula automáticamente y puedes cambiarlo.</p>
-              <div class="visual-admin-grid" style="grid-template-columns:1fr;max-width:620px">
-                <div>
-                  <label>Nombre de la marca<input id="visualBrandName" class="search" placeholder="Ej. New Balance"></label>
-                  <label>Orden<input id="visualBrandOrder" class="search" type="number" min="1" value="1"></label>
-                  <label>Logo / imagen<input id="visualBrandImage" type="file" accept="image/*"></label>
-                  <label class="check"><input id="visualBrandFeatured" type="checkbox" checked> Mostrar en Marcas destacadas</label>
-                  <button id="saveVisualBrand" class="btn" type="button">+ Agregar marca</button>
-                </div>
-              </div>
-              <div class="card" style="display:block;margin-top:22px">
-                <p class="kicker">MARCAS EXISTENTES</p>
-                <div id="visualBrandsList" class="admin-list"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="settingsView" class="hidden">
-          <p class="kicker">CONFIGURACIÓN</p>
-          <h1>WhatsApp</h1>
-          <div class="card" style="display:block">
-            <label style="display:block;font-size:13px;font-weight:700">
-              Número de WhatsApp
-              <input id="wa" class="search" style="width:100%;margin-top:7px" value="6624262742">
-            </label>
-            <button id="saveWa" class="btn" style="margin-top:15px">Guardar WhatsApp</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </section>
-
-  <div id="modal" class="modal hidden">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h2 id="modalTitle">Agregar producto</h2>
-        <button id="modalClose" class="x" type="button">×</button>
-      </div>
-
-      <label>
-        Nombre
-        <input id="pName" required>
-      </label>
-
-      <label>
-        Precio
-        <input id="pPrice" type="number" min="0" step="0.01">
-      </label>
-
-      <label>
-        Precio anterior <span class="hint">(solo para productos en oferta)</span>
-        <input id="pPreviousPrice" type="number" min="0" step="1" placeholder="Ej. 1,999">
-      </label>
-
-      <label>
-        Categoría principal
-        <select id="pCat"></select>
-      </label>
-
-      <label>
-        Marca
-        <select id="pBrand">
-          <option value="">Primero selecciona una categoría</option>
-        </select>
-        <span class="hint">Solo aparecerán las marcas configuradas para la categoría seleccionada.</span>
-      </label>
-
-      <label>
-        Modelo / nombre corto
-        <input id="pModel" placeholder="Ej. Air Max, Logo Classic, 3 Pack">
-      </label>
-
-      <label>
-        Subcategoría
-        <input id="pSubcategory" placeholder="Ej. Sudaderas, Carteras, Boxer, Calcetas">
-      </label>
-
-      <label class="check">
-        <input id="pHasSizes" type="checkbox">
-        Este producto maneja tallas
-      </label>
-
-      <div id="sizeFields" style="display:none">
-        <label>
-          Tallas disponibles
-          <input id="pTalla" placeholder="Ej. S, M, L, XL o 7, 8, 9">
-          <span class="hint">Puedes escribir varias separadas por coma. Ejemplo: S, M, L, XL</span>
-        </label>
-      </div>
-
-      <label>
-        Stock
-        <input id="pStock" type="number" min="0" step="1" value="1">
-      </label>
-
-      <label>
-        Descripción
-        <textarea id="pDesc" rows="4"></textarea>
-      </label>
-
-      <label class="check">
-        <input id="pOffer" type="checkbox">
-        Mostrar como oferta
-      </label>
-
-      <label>
-        Foto del producto
-        <input id="pImage" type="file" accept="image/*">
-        <div id="pImagePreview" class="image-preview">Sin imagen</div>
-        <div id="uploadStatus" class="upload-status"></div>
-      </label>
-
-      <button id="saveProduct" class="btn" type="button">Guardar producto</button>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin-auth.js?v=20261009-2"></script>
-  <script src="admin.js?v=20261009-responsive2"></script>
-</body>
-</html>
+checkSession();
