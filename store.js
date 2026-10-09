@@ -62,7 +62,8 @@ const FALLBACK_VISUAL_CATEGORIES = [
   {label:"Lentes", key:"lentes", icon:"🕶️", image:"assets/categoria-lentes.jpg"},
   {label:"Carteras", key:"carteras", icon:"👝", image:"assets/categoria-carteras.jpg"},
   {label:"Ropa interior", key:"ropa-interior", icon:"🩲", image:"assets/categoria-ropa-interior.jpg"},
-  {label:"Calcetas", key:"calcetas", icon:"🧦", image:"assets/categoria-calcetas.jpg"}
+  {label:"Calcetas", key:"calcetas", icon:"🧦", image:"assets/categoria-calcetas.jpg"},
+  {label:"Tecnología", key:"tecnologia", icon:"🎧", image:"assets/categoria-tecnologia.jpg"}
 ];
 
 const FALLBACK_FEATURED_BRANDS = [
@@ -468,9 +469,10 @@ async function startStore(){
   allCategoriesBtn?.addEventListener("click",()=>{
     const wrap=document.getElementById("cats");
     if(!wrap) return;
-    const expanded=wrap.classList.toggle("is-expanded");
+    const expanded=!wrap.classList.contains("is-expanded");
+    wrap.classList.toggle("is-expanded", expanded);
     allCategoriesBtn.setAttribute("aria-expanded",String(expanded));
-    allCategoriesBtn.innerHTML=expanded?'Mostrar menos <span>−</span>':'Ver todas las categorías <span>＋</span>';
+    allCategoriesBtn.innerHTML=expanded?'Ver menos <span>−</span>':'Ver todas <span>＋</span>';
   });
   const allBrandsBtn=document.querySelector('[data-view-all-brands]');
   allBrandsBtn?.addEventListener("click",()=>{
@@ -478,7 +480,7 @@ async function startStore(){
     if(!wrap) return;
     const expanded=wrap.classList.toggle("is-expanded");
     allBrandsBtn.setAttribute("aria-expanded",String(expanded));
-    allBrandsBtn.innerHTML=expanded?'Mostrar menos <span>−</span>':'Ver todas <span>＋</span>';
+    allBrandsBtn.innerHTML=expanded?'Ver menos <span>−</span>':'Ver todas <span>＋</span>'; 
   });
   // Cualquier enlace que lleve al Catálogo debe mostrar nuevamente TODO el catálogo,
   // limpiando la categoría, marca, talla y búsqueda que estuvieran seleccionadas.
