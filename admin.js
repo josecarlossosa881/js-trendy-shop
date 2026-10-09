@@ -266,9 +266,10 @@ async function saveBrandsForCategory(category){
 }
 
 function renderImage(url, name){
+  const fallback = `<span class="admin-no-photo">Sin foto</span>`;
   return url
-    ? `<img src="${url}" alt="${name}" style="width:100%;height:100%;object-fit:cover">`
-    : "";
+    ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="width:100%;height:100%;object-fit:contain"><span class="admin-no-photo" style="display:none">Sin foto</span>`
+    : fallback;
 }
 
 async function renderAdmin(){
