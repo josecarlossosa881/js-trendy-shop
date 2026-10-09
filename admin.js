@@ -2,7 +2,7 @@ let editingId = null;
 
 const $ = id => document.getElementById(id);
 
-const DEFAULT_CATS = ["Todos","Bolsas","Carteras","Calzado","Ropa","Ropa interior","Perfumes","Accesorios"];
+const DEFAULT_CATS = ["Todos","Bolsas","Carteras","Calzado","Ropa","Perfumes","Accesorios"];
 const STORAGE_BUCKET = "productos";
 const VISUAL_CATEGORY_BUCKET = STORAGE_BUCKET;
 
@@ -38,21 +38,37 @@ function setNextVisualOrders(cats, brands){
 }
 
 async function syncLocalCategoriesFromVisual(){
-  // Combina las categorías base, las configuradas en Supabase y las que ya usan productos.
-  // Así no desaparecen opciones del formulario cuando la lista visual está incompleta.
-  const [visualResult, productsResult] = await Promise.allSettled([getVisualCategories(), getProducts()]);
-  const visualCats = visualResult.status === "fulfilled" ? visualResult.value : [];
-  const products = productsResult.status === "fulfilled" ? productsResult.value : [];
-  const names = [];
-  const addName = value => {
-    const name = String(value || "").trim();
-    if(name && !names.some(x => x.toLocaleLowerCase("es-MX") === name.toLocaleLowerCase("es-MX"))) names.push(name);
-  };
-  DEFAULT_CATS.filter(c => c !== "Todos").forEach(addName);
-  visualCats.filter(c => c.activo).sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0)).forEach(c=>addName(c.nombre));
-  products.forEach(p=>addName(p.category));
-  saveCats(["Todos", ...names]);
-  return visualCats;
+  const cats = await getVisualCategories();
+  const active = cats.filter(c=>c.activo).sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0));
+  const saved = getCats().filter(c=>c && c !== "Todos");
+  const names = [...DEFAULT_CATS.filter(c=>c !== "Todos"), ...saved, ...active.map(c=>c.nombre)];
+  const unique = [...new Map(names.map(c=>[String(c).trim().toLocaleLowerCase(),String(c).trim()])).values()].filter(Boolean);
+  saveCats(["Todos", ...unique]);
+  return cats;
+}
+
+// Combina las categorías predeterminadas, las guardadas localmente, las activas
+// de Supabase y las usadas por productos para que el selector nunca se quede corto.
+async function getAllCategoryNames(){
+  const names = [...DEFAULT_CATS.filter(c=>c !== "Todos"), ...getCats().filter(c=>c && c !== "Todos")];
+  try {
+    const visual = await getVisualCategories();
+    names.push(...visual.filter(c=>c.activo).sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0)).map(c=>c.nombre));
+  } catch(error) {
+    console.warn("No se pudieron cargar categorías de Supabase:", error.message);
+  }
+  try {
+    const {data,error}=await supabaseClient.from("productos").select("categoria");
+    if(!error) names.push(...(data||[]).map(p=>p.categoria));
+  } catch(error) {
+    console.warn("No se pudieron cargar categorías de productos:", error.message);
+  }
+  const unique=[...new Map(names.map(value=>{
+    const name=String(value||"").trim();
+    return [name.toLocaleLowerCase(),name];
+  }).filter(([key])=>key)).values()];
+  saveCats(["Todos", ...unique]);
+  return unique;
 }
 
 async function renderVisualConfig(){
@@ -229,7 +245,7 @@ async function saveCategoryBrands(category, brandsText){
 
 async function renderCategoryBrands(){
   const list=$("catList");
-  const cats=getCats().filter(c=>c!=="Todos");
+  const cats=await getAllCategoryNames();
   let rules=[];
   try{ rules=await getCategoryBrandRules(); }
   catch(error){
@@ -284,7 +300,6 @@ function renderImage(url, name){
 
 async function renderAdmin(){
   try{
-    await syncLocalCategoriesFromVisual();
     const ps = (await getProducts()).filter(p => p.activo);
 
     $("adminProducts").innerHTML = ps.map(p => `
@@ -309,16 +324,15 @@ async function renderAdmin(){
   }
 }
 
-function fillCats(selected = ""){
-  const cs = getCats().filter(c => c !== "Todos");
-
+async function fillCats(selected = ""){
+  const cs = await getAllCategoryNames();
+  const wanted = String(selected || "").trim();
+  if(wanted && !cs.some(c=>c.toLocaleLowerCase()===wanted.toLocaleLowerCase())) cs.unshift(wanted);
+  const escapeHtml = value => String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
   $("pCat").innerHTML = cs.map(c =>
-    `<option value="${c.replaceAll('"','&quot;')}" ${c === selected ? "selected" : ""}>${c}</option>`
+    `<option value="${escapeHtml(c)}" ${c.toLocaleLowerCase() === wanted.toLocaleLowerCase() ? "selected" : ""}>${escapeHtml(c)}</option>`
   ).join("");
-
-  if(!cs.length){
-    $("pCat").innerHTML = `<option value="">Sin categoría</option>`;
-  }
+  if(!cs.length) $("pCat").innerHTML = `<option value="">Sin categoría</option>`;
 }
 
 function showPreview(url){
@@ -392,7 +406,6 @@ async function deleteStorageImage(url){
 }
 
 async function openModal(id = null){
-  try { await syncLocalCategoriesFromVisual(); } catch(error) { console.warn("No se pudieron actualizar las categorías:", error.message); }
   editingId = id;
   $("modal").classList.remove("hidden");
   $("modalTitle").textContent = id ? "Editar producto" : "Agregar producto";
@@ -419,7 +432,7 @@ async function openModal(id = null){
     }
   }
 
-  fillCats(p?.category || getCats()[1] || "");
+  await fillCats(p?.category || getCats()[1] || "");
 
   $("pName").value = p?.name || "";
   $("pPrice").value = p?.price ?? "";
