@@ -503,27 +503,24 @@ async function openDetail(id){
   if(sizes.length) await refreshSizeInventory();
   const firstAvailable=sizes.find(s=>sizeStockFor(p.id,s)>0)||sizes[0]||"";
   detailSelectedSize=firstAvailable;
+  const sizeControls=sizes.length?`<div class="detail-sizes"><b>Selecciona talla</b><div class="detail-size-buttons" id="detailSizeButtons">${sizes.map(s=>{const stock=sizeStockFor(p.id,s);return `<button type="button" class="detail-size-option ${s===firstAvailable?'selected':''}" data-size="${esc(s)}" aria-pressed="${s===firstAvailable?'true':'false'}" ${stock<=0?'disabled':''}><strong>${esc(s)}</strong><span>${stock} disponibles</span></button>`;}).join('')}</div><p id="detailSizeStock" class="stock-note">${firstAvailable?`${sizeStockFor(p.id,firstAvailable)} disponibles de talla ${esc(firstAvailable)}`:'Selecciona una talla'}</p></div>`:'';
   const available=sizes.length?sizeStockFor(p.id,firstAvailable):Math.max(0,Number(p.stock)||0);
-  const sizeControls=sizes.length?`<section class="detail-sizes"><h3>Talla</h3><div class="detail-size-options">${sizes.map(s=>{const n=sizeStockFor(p.id,s);return `<button type="button" class="detail-size-option ${s===firstAvailable?'selected':''}" data-size="${esc(s)}" onclick="selectDetailSize(${JSON.stringify(s).replace(/</g,'\\u003c')})" ${n<=0?'disabled':''}><b>${esc(s)}</b><span>${n} ${n===1?'disponible':'disponibles'}</span></button>`}).join('')}</div><p id="detailSizeStock" class="stock-note">${firstAvailable?`${sizeStockFor(p.id,firstAvailable)} disponibles de talla ${esc(firstAvailable)}`:'No hay tallas disponibles'}</p></section>`:'';
-  document.getElementById("detailContent").innerHTML=`<div class="detail-summary"><div class="detail-image">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Sin imagen'}</div><div class="detail-summary-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p>${esc(p.desc||'Producto seleccionado de JS Trendy Shop.')}</p></div></div><div class="detail-purchase">${sizeControls}<div class="detail-quantity-control"><div class="detail-quantity-label"><label for="detailQuantity">Cantidad</label><p id="detailQuantityMax">Máximo: ${available} ${sizes.length?'piezas':'unidades'}</p></div><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad">−</button><input id="detailQuantity" type="number" min="1" max="${Math.max(0,available)}" value="1" onchange="onDetailQuantityChange(this.value)"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad">+</button></div></div><p id="detailAvailability" class="stock-note">${available>0?(sizes.length?`${available} disponibles de talla ${esc(firstAvailable)}`:`${available} disponibles`):'Actualmente agotado'}</p><button id="detailAddBtn" class="btn full detail-implement-btn" onclick="addFromDetail()" ${available<=0?'disabled':''}>Quiero implementar este sistema</button></div>`;
+  document.getElementById("detailContent").innerHTML=`<div class="detail-image">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Sin imagen'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}<p>${esc(p.desc||'Producto seleccionado de JS Trendy Shop.')}</p>${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad">−</button><input id="detailQuantity" type="number" min="1" max="${Math.max(0,available)}" value="1" onchange="onDetailQuantityChange(this.value)"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad">+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?(available>0?`${available} disponibles de esta talla`:'Esta talla está agotada'):available>0?`${available} disponibles`:'Actualmente agotado'}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${available<=0?'disabled':''}>Agregar al carrito</button></div>`;
+  // Cada botón de talla selecciona esa talla y actualiza existencias/cantidad.
+  document.querySelectorAll('#detailSizeButtons .detail-size-option').forEach(btn=>{
+    btn.addEventListener('click',()=>onDetailSizeChange(btn.dataset.size));
+  });
   document.getElementById("detailModal").classList.remove("hidden");
 }
-function selectDetailSize(size){
-  onDetailSizeChange(size);
-  document.querySelectorAll('.detail-size-option').forEach(btn=>btn.classList.toggle('selected',btn.dataset.size===String(size)));
-  const p=products.find(x=>String(x.id)===String(detailId));
-  const available=p?sizeStockFor(p.id,size):0;
-  const maxLabel=document.getElementById('detailQuantityMax');if(maxLabel)maxLabel.textContent=`Máximo: ${available} ${available===1?'pieza':'piezas'}`;
-}
-
 function onDetailSizeChange(size){
   const p=products.find(x=>String(x.id)===String(detailId));if(!p)return;
   detailSelectedSize=size;detailQuantity=1;
+  document.querySelectorAll('#detailSizeButtons .detail-size-option').forEach(btn=>{const selected=btn.dataset.size===String(size);btn.classList.toggle('selected',selected);btn.setAttribute('aria-pressed',selected?'true':'false');});
   const available=sizeStockFor(p.id,size);
   const qty=document.getElementById("detailQuantity");if(qty){qty.value="1";qty.max=String(available);}
   const stock=document.getElementById("detailSizeStock");if(stock)stock.textContent=`${available} disponibles de talla ${size}`;
   const note=document.getElementById("detailAvailability");if(note)note.textContent=available>0?`${available} disponibles de esta talla`:`La talla ${size} está agotada`;
-  const btn=document.getElementById("detailAddBtn");if(btn)btn.disabled=available<=0;const maxLabel=document.getElementById("detailQuantityMax");if(maxLabel)maxLabel.textContent=`Máximo: ${available} ${available===1?"pieza":"piezas"}`;document.querySelectorAll(".detail-size-option").forEach(el=>el.classList.toggle("selected",el.dataset.size===String(size)));
+  const btn=document.getElementById("detailAddBtn");if(btn)btn.disabled=available<=0;
 }
 function onDetailQuantityChange(value){const p=products.find(x=>String(x.id)===String(detailId));if(!p)return;const available=sizesForProduct(p).length?sizeStockFor(p.id,detailSelectedSize):Math.max(0,Number(p.stock)||0);detailQuantity=Math.max(1,Math.min(available,parseInt(value,10)||1));const input=document.getElementById("detailQuantity");if(input)input.value=String(detailQuantity);}
 function changeDetailQuantity(delta){const input=document.getElementById("detailQuantity");if(!input)return;onDetailQuantityChange((parseInt(input.value,10)||1)+delta);}
