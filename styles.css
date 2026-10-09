@@ -1374,7 +1374,9 @@
     min-width: 0 !important;
   }
 
-  .visual-cats > :nth-child(n+7) {
+  /* Las categorías 7 a 12 solo se ocultan cuando el contenedor está contraído.
+     No ocultar por posición sin comprobar is-expanded. */
+  .visual-cats:not(.is-expanded) > :nth-child(n+7) {
     display: none !important;
   }
 
