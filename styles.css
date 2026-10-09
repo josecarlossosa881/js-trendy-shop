@@ -1957,3 +1957,15 @@
 .detail-size-button:disabled{opacity:.42;cursor:not-allowed;background:#f4f4f4;color:#777}
 .detail-size-button.selected:disabled{background:#555;color:#fff}
 @media(max-width:700px){.detail-size-buttons{gap:8px}.detail-size-button{min-height:76px;border-radius:18px}.detail-size-button strong{font-size:22px}.detail-size-button span{font-size:14px}}
+
+
+/* Ajuste puntual: botones de talla compactos y selección real */
+.detail-size-buttons{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+.detail-size-button{min-height:66px;padding:8px 9px;border-width:1.5px;border-radius:16px;gap:4px}
+.detail-size-button strong{font-size:20px}
+.detail-size-button span{font-size:13px}
+.detail-size-button.selected{background:#222!important;color:#fff!important;border-color:#222!important}
+.detail-size-button:not(.selected){background:#fff;color:#181818}
+.detail-size-button:disabled{opacity:.42;cursor:not-allowed}
+.detail-quantity-buttons button:disabled,.detail-quantity-buttons input:disabled{opacity:.45;cursor:not-allowed;background:#f3f3f3}
+@media(max-width:700px){.detail-size-buttons{gap:7px}.detail-size-button{min-height:60px;border-radius:14px;padding:7px}.detail-size-button strong{font-size:19px}.detail-size-button span{font-size:12px}}
