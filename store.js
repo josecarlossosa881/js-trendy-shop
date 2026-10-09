@@ -86,12 +86,20 @@ async function loadVisualCatalogConfig(){
       supabaseClient.from("tienda_marcas").select("id,nombre,imagen,destacada,orden").eq("activo",true).eq("destacada",true).order("orden",{ascending:true}).order("id",{ascending:true})
     ]);
     if(!catRes.error && Array.isArray(catRes.data) && catRes.data.length){
-      visualCategories = catRes.data.map(row=>{
+      const configured = catRes.data.map(row=>{
         const label=String(row.etiqueta||row.nombre||"").trim();
         const dbCategory=String(row.nombre||label).trim();
         const fallback=FALLBACK_VISUAL_CATEGORIES.find(x=>x.label.toLowerCase()===label.toLowerCase() || x.key===dbCategory.toLowerCase());
         return {label,key:dbCategory.toLowerCase(),dbCategory,image:String(row.imagen||fallback?.image||"").trim(),icon:fallback?.icon||"✦"};
       }).filter(x=>x.label);
+      // Combina las categorías configuradas en Supabase con las categorías base
+      // para que la portada no oculte categorías conocidas cuando la tabla tenga solo algunas.
+      const merged = [...configured];
+      FALLBACK_VISUAL_CATEGORIES.forEach(fallback=>{
+        const exists=merged.some(item=>String(item.dbCategory||item.label).toLowerCase()===String(fallback.dbCategory||fallback.label).toLowerCase() || String(item.label).toLowerCase()===String(fallback.label).toLowerCase());
+        if(!exists) merged.push(fallback);
+      });
+      visualCategories = merged;
     }
     if(!brandRes.error && Array.isArray(brandRes.data) && brandRes.data.length){
       featuredBrands = brandRes.data.map(row=>({name:String(row.nombre||"").trim(),image:String(row.imagen||"").trim()})).filter(x=>x.name);
@@ -470,7 +478,7 @@ async function startStore(){
     if(!wrap) return;
     const expanded=wrap.classList.toggle("is-expanded");
     allBrandsBtn.setAttribute("aria-expanded",String(expanded));
-    allBrandsBtn.innerHTML=expanded?'Mostrar menos marcas <span>−</span>':'Ver todas las marcas <span>＋</span>';
+    allBrandsBtn.innerHTML=expanded?'Mostrar menos <span>−</span>':'Ver todas <span>＋</span>';
   });
   // Cualquier enlace que lleve al Catálogo debe mostrar nuevamente TODO el catálogo,
   // limpiando la categoría, marca, talla y búsqueda que estuvieran seleccionadas.
