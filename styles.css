@@ -1946,11 +1946,14 @@
 #detailAddBtn:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:700px){.detail-quantity-control{align-items:flex-start;flex-direction:column}.detail-quantity-buttons{width:100%;justify-content:flex-start}.detail-quantity-buttons input{width:80px}}
 
-/* Solo sustituye el selector desplegable por botones de talla; conserva el modal original. */
-.detail-size-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
-.detail-size-option{min-height:86px;padding:12px 8px;border:2px solid #e5e5e5;border-radius:22px;background:#fff;color:#181818;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;font:inherit;transition:background .15s,border-color .15s,color .15s}
-.detail-size-option strong{font-size:25px;line-height:1.1;font-weight:750}
-.detail-size-option span{font-size:15px;line-height:1.25;text-align:center}
-.detail-size-option.selected{background:#202020;color:#fff;border-color:#202020}
-.detail-size-option:disabled{opacity:.42;cursor:not-allowed}
-@media(max-width:700px){.detail-size-buttons{gap:8px}.detail-size-option{min-height:78px;border-radius:20px}.detail-size-option strong{font-size:23px}.detail-size-option span{font-size:14px}}
+
+/* Selector de tallas: botones reales conectados a onDetailSizeChange() */
+.detail-size-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.detail-size-button{min-width:0;min-height:86px;padding:12px 10px;border:2px solid #e5e5e5;border-radius:22px;background:#fff;color:#181818;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;font:inherit;transition:background .15s,color .15s,border-color .15s}
+.detail-size-button strong{font-size:24px;line-height:1.1}
+.detail-size-button span{font-size:15px;line-height:1.25;text-align:center}
+.detail-size-button.selected{background:#222;color:#fff;border-color:#222}
+.detail-size-button:focus-visible{outline:3px solid #4388f5;outline-offset:3px}
+.detail-size-button:disabled{opacity:.42;cursor:not-allowed;background:#f4f4f4;color:#777}
+.detail-size-button.selected:disabled{background:#555;color:#fff}
+@media(max-width:700px){.detail-size-buttons{gap:8px}.detail-size-button{min-height:76px;border-radius:18px}.detail-size-button strong{font-size:22px}.detail-size-button span{font-size:14px}}
