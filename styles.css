@@ -1874,3 +1874,32 @@
   .visual-cats:not(.is-expanded) > :nth-child(n+7) { display: none; }
   .featured-brands:not(.is-expanded) > :nth-child(n+7) { display: none; }
 }
+
+
+/* Ajuste móvil: encabezado de marcas alineado como Categorías */
+@media (max-width: 700px) {
+  #categorias .brands-heading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    margin-top: 28px !important;
+    margin-bottom: 14px !important;
+  }
+  #categorias .brands-heading h2 {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    font-size: clamp(19px, 5.4vw, 25px) !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+  #categorias .brands-heading .view-all-toggle {
+    flex: 0 0 auto !important;
+    padding: 8px 10px !important;
+    min-height: 38px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  #categorias .brands-heading .view-all-toggle span { margin-left: 1px !important; }
+}
