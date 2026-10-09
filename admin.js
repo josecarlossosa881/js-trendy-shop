@@ -2,7 +2,7 @@ let editingId = null;
 
 const $ = id => document.getElementById(id);
 
-const DEFAULT_CATS = ["Todos","Bolsas","Carteras","Calzado","Ropa","Perfumes","Accesorios"];
+const DEFAULT_CATS = ["Todos","Bolsas","Carteras","Calzado","Ropa","Ropa interior","Perfumes","Accesorios"];
 const STORAGE_BUCKET = "productos";
 const VISUAL_CATEGORY_BUCKET = STORAGE_BUCKET;
 
@@ -38,10 +38,21 @@ function setNextVisualOrders(cats, brands){
 }
 
 async function syncLocalCategoriesFromVisual(){
-  const cats = await getVisualCategories();
-  const active = cats.filter(c=>c.activo).sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0));
-  saveCats(["Todos", ...active.map(c=>c.nombre)]);
-  return cats;
+  // Combina las categorías base, las configuradas en Supabase y las que ya usan productos.
+  // Así no desaparecen opciones del formulario cuando la lista visual está incompleta.
+  const [visualResult, productsResult] = await Promise.allSettled([getVisualCategories(), getProducts()]);
+  const visualCats = visualResult.status === "fulfilled" ? visualResult.value : [];
+  const products = productsResult.status === "fulfilled" ? productsResult.value : [];
+  const names = [];
+  const addName = value => {
+    const name = String(value || "").trim();
+    if(name && !names.some(x => x.toLocaleLowerCase("es-MX") === name.toLocaleLowerCase("es-MX"))) names.push(name);
+  };
+  DEFAULT_CATS.filter(c => c !== "Todos").forEach(addName);
+  visualCats.filter(c => c.activo).sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0)).forEach(c=>addName(c.nombre));
+  products.forEach(p=>addName(p.category));
+  saveCats(["Todos", ...names]);
+  return visualCats;
 }
 
 async function renderVisualConfig(){
@@ -273,6 +284,7 @@ function renderImage(url, name){
 
 async function renderAdmin(){
   try{
+    await syncLocalCategoriesFromVisual();
     const ps = (await getProducts()).filter(p => p.activo);
 
     $("adminProducts").innerHTML = ps.map(p => `
@@ -380,6 +392,7 @@ async function deleteStorageImage(url){
 }
 
 async function openModal(id = null){
+  try { await syncLocalCategoriesFromVisual(); } catch(error) { console.warn("No se pudieron actualizar las categorías:", error.message); }
   editingId = id;
   $("modal").classList.remove("hidden");
   $("modalTitle").textContent = id ? "Editar producto" : "Agregar producto";
