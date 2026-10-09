@@ -1852,10 +1852,11 @@
 }
 
 
-/* CORRECCIÓN: mostrar todas las categorías y las marcas en celular */
+/* ===== FIX DEFINITIVO: categorías y marcas visibles también en móvil ===== */
 @media (max-width: 700px) {
-  .visual-cats > :nth-child(n+7) {
+  .visual-cats > :nth-child(n + 7) {
     display: block !important;
+    visibility: visible !important;
   }
 
   .brands-heading {
@@ -1868,10 +1869,13 @@
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
     visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   .featured-brand {
     display: flex !important;
+    visibility: visible !important;
     min-width: 0 !important;
     height: 58px !important;
   }
