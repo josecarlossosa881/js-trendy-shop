@@ -86,22 +86,15 @@ async function loadVisualCatalogConfig(){
       supabaseClient.from("tienda_marcas").select("id,nombre,imagen,destacada,orden").eq("activo",true).eq("destacada",true).order("orden",{ascending:true}).order("id",{ascending:true})
     ]);
     if(!catRes.error && Array.isArray(catRes.data) && catRes.data.length){
-      const configuredCategories = catRes.data.map(row=>{
+      visualCategories = catRes.data.map(row=>{
         const label=String(row.etiqueta||row.nombre||"").trim();
         const dbCategory=String(row.nombre||label).trim();
-        const fallback=FALLBACK_VISUAL_CATEGORIES.find(x=>x.label.toLowerCase()===label.toLowerCase() || x.key===dbCategory.toLowerCase() || String(x.dbCategory||"").toLowerCase()===dbCategory.toLowerCase());
+        const fallback=FALLBACK_VISUAL_CATEGORIES.find(x=>x.label.toLowerCase()===label.toLowerCase() || x.key===dbCategory.toLowerCase());
         return {label,key:dbCategory.toLowerCase(),dbCategory,image:String(row.imagen||fallback?.image||"").trim(),icon:fallback?.icon||"✦"};
       }).filter(x=>x.label);
-      // Mantiene las categorías de respaldo que aún no estén activadas en Supabase.
-      const configuredKeys = new Set(configuredCategories.flatMap(x=>[x.label.toLowerCase(),String(x.dbCategory||x.label).toLowerCase()]));
-      const missingFallbacks = FALLBACK_VISUAL_CATEGORIES.filter(x=>!configuredKeys.has(x.label.toLowerCase()) && !configuredKeys.has(String(x.dbCategory||x.key).toLowerCase()));
-      visualCategories = [...configuredCategories, ...missingFallbacks];
     }
     if(!brandRes.error && Array.isArray(brandRes.data) && brandRes.data.length){
-      const configuredBrands = brandRes.data.map(row=>({name:String(row.nombre||"").trim(),image:String(row.imagen||"").trim()})).filter(x=>x.name);
-      const configuredNames = new Set(configuredBrands.map(x=>x.name.toLowerCase()));
-      const missingFallbackBrands = FALLBACK_FEATURED_BRANDS.filter(x=>!configuredNames.has(x.name.toLowerCase()));
-      featuredBrands = [...configuredBrands, ...missingFallbackBrands];
+      featuredBrands = brandRes.data.map(row=>({name:String(row.nombre||"").trim(),image:String(row.imagen||"").trim()})).filter(x=>x.name);
     }
   }catch(error){
     console.warn("Configuración visual no disponible; se usa la configuración incluida en V8.3.", error);
@@ -460,7 +453,13 @@ async function startStore(){
   document.getElementById("send").onclick=sendOrder;
   document.getElementById("detailClose").onclick=closeDetail;
   document.getElementById("detailModal").addEventListener("click",e=>{if(e.target.id==="detailModal")closeDetail();});
-  document.querySelector('[data-category="Todos"]')?.addEventListener("click",chooseAll);
+  document.getElementById("toggleAllCategories")?.addEventListener("click",()=>{
+    const wrap=document.getElementById("cats");
+    const btn=document.getElementById("toggleAllCategories");
+    const expanded=wrap?.classList.toggle("expanded") || false;
+    btn?.setAttribute("aria-expanded",String(expanded));
+    if(btn) btn.innerHTML=(expanded?"Mostrar menos":"Ver todas las categorías")+' <span>→</span>';
+  });
   document.getElementById("catalogAllBtn")?.addEventListener("click",chooseAll);
   // Cualquier enlace que lleve al Catálogo debe mostrar nuevamente TODO el catálogo,
   // limpiando la categoría, marca, talla y búsqueda que estuvieran seleccionadas.
@@ -470,8 +469,12 @@ async function startStore(){
       chooseAll();
     });
   });
-  document.querySelector('[data-featured-brands="1"]')?.addEventListener("click",()=>{
-    chooseAll();
+  document.getElementById("toggleAllBrands")?.addEventListener("click",()=>{
+    const wrap=document.getElementById("featuredBrands");
+    const btn=document.getElementById("toggleAllBrands");
+    const expanded=wrap?.classList.toggle("expanded") || false;
+    btn?.setAttribute("aria-expanded",String(expanded));
+    if(btn) btn.innerHTML=(expanded?"Mostrar menos":"Ver todas las marcas")+' <span>→</span>';
   });
   document.getElementById("products").innerHTML='<p class="empty">Cargando productos...</p>';
   await loadProducts();
