@@ -1903,3 +1903,20 @@
   }
   #categorias .brands-heading .view-all-toggle span { margin-left: 1px !important; }
 }
+
+
+/* Ajuste solicitado: título corto y botón de marcas en la misma fila en celular */
+@media (max-width: 700px) {
+  #categorias .brands-heading {
+    display: flex !important; align-items: center !important; justify-content: space-between !important;
+    flex-wrap: nowrap !important; gap: 8px !important;
+  }
+  #categorias .brands-heading h2 {
+    flex: 0 1 auto !important; min-width: 0 !important; white-space: nowrap !important;
+    font-size: clamp(22px, 6vw, 28px) !important;
+  }
+  #categorias .brands-heading .view-all-toggle {
+    flex: 0 0 auto !important; padding: 9px 12px !important; min-height: 40px !important;
+    font-size: clamp(11px, 3.2vw, 13px) !important;
+  }
+}
