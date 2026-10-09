@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>JS Trendy Shop | Administrador</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="admin-responsive.css?v=20261009-6">
+  <link rel="stylesheet" href="admin-responsive.css?v=20261009-7">
   <style>
     .auth-screen{min-height:100vh;display:grid;place-items:center;padding:25px;background:#f5f3f1}
     .auth-box{width:min(430px,100%);background:#fff;border:1px solid #ddd8d4;border-radius:10px;padding:32px;box-shadow:0 12px 35px #00000012}
@@ -191,6 +191,60 @@
   #adminPanel .size-inventory-table tbody td:nth-child(6) { grid-column:1 / -1 !important; grid-row:4 !important; padding-top:8px !important; }
   #adminPanel .size-inventory-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; }
   #adminPanel .size-inventory-actions button { min-height:39px !important; padding:7px 5px !important; font-size:12px !important; }
+}
+
+
+
+/* V4 — remate visual para uso diario en móvil. */
+.admin-no-photo {
+  width:100%; height:100%; min-height:48px; display:flex; align-items:center; justify-content:center;
+  padding:5px; border-radius:8px; background:#f2efec; color:#817a73; font-size:10px; font-weight:600;
+  text-align:center; line-height:1.2;
+}
+@media (max-width:700px) {
+  #adminPanel .admin-top { padding:9px 13px !important; gap:6px !important; }
+  #adminPanel .admin-top > div:first-child { grid-template-columns:auto minmax(0,1fr) !important; gap:9px !important; }
+  #adminPanel .admin-top strong { font-size:14px !important; letter-spacing:-.01em !important; }
+  #adminPanel .admin-top > div:last-child { grid-template-columns:minmax(0,1fr) auto !important; gap:7px !important; }
+  #adminPanel .admin-user { font-size:11px !important; }
+  #adminPanel .logout-btn { min-height:36px !important; padding:7px 9px !important; }
+  #adminPanel .admin { padding:9px 12px 18px !important; gap:9px !important; }
+  #adminPanel .admin-menu { padding:7px !important; gap:4px !important; }
+  #adminPanel .admin-menu > button { min-height:38px !important; padding:7px 8px !important; font-size:12px !important; line-height:1.15 !important; }
+  #adminPanel #productsView > div:first-child { margin-bottom:12px !important; gap:7px !important; }
+  #adminPanel #productsView h1 { font-size:clamp(30px,8vw,36px) !important; }
+  #adminPanel #productsView > div:first-child > button { min-height:43px !important; }
+
+  /* Tarjetas de producto: datos primero y acciones en una fila inferior. */
+  #adminPanel #adminProducts .admin-item {
+    display:grid !important; grid-template-columns:64px minmax(0,1fr) !important;
+    grid-template-rows:auto auto !important; align-items:start !important; gap:9px 11px !important;
+    padding:11px !important; width:100% !important; min-width:0 !important; border-radius:12px !important;
+  }
+  #adminPanel #adminProducts .admin-item > .pic {
+    grid-column:1 !important; grid-row:1 !important; width:64px !important; height:64px !important;
+    min-width:64px !important; margin:0 !important; align-self:start !important; background:#f2efec !important;
+    border-radius:8px !important; overflow:hidden !important;
+  }
+  #adminPanel #adminProducts .admin-item > .grow {
+    grid-column:2 !important; grid-row:1 !important; width:100% !important; min-width:0 !important;
+    font-size:13px !important; line-height:1.3 !important; overflow-wrap:anywhere !important;
+  }
+  #adminPanel #adminProducts .admin-item > .grow b { font-size:15px !important; line-height:1.22 !important; margin-bottom:4px !important; }
+  #adminPanel #adminProducts .admin-item > .grow small { display:block !important; margin-top:3px !important; font-size:12px !important; line-height:1.4 !important; color:#6f6963 !important; }
+  #adminPanel #adminProducts .admin-item > button {
+    grid-row:2 !important; width:100% !important; min-width:0 !important; min-height:40px !important;
+    margin:0 !important; padding:8px 6px !important; font-size:12px !important; white-space:normal !important;
+  }
+  #adminPanel #adminProducts .admin-item > button:nth-of-type(1) { grid-column:1 !important; }
+  #adminPanel #adminProducts .admin-item > button:nth-of-type(2) { grid-column:2 !important; }
+  #adminPanel .size-inventory-card { padding:11px !important; }
+  #adminPanel .size-inventory-card > div:first-child { gap:8px !important; margin-bottom:10px !important; }
+  #adminPanel #refreshSizeInventory { min-height:37px !important; }
+}
+@media (min-width:701px) {
+  #adminPanel #adminProducts .admin-item > .pic { overflow:hidden; background:#f2efec; border-radius:8px; }
+  #adminPanel #adminProducts .admin-item > .pic img { display:block; object-fit:contain !important; }
 }
 
 </style>
