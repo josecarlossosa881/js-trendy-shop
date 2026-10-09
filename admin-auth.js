@@ -27,6 +27,7 @@ function showPanel(user) {
   loginScreen.style.display = "none";
   adminPanel.style.display = "block";
   adminUser.textContent = user?.email || "";
+  if (typeof renderAdmin === "function") renderAdmin();
 }
 
 function showLogin() {
