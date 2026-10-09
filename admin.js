@@ -759,6 +759,7 @@ document.querySelectorAll(".admin-menu > button").forEach(b => {
 
 // Búsquedas y actualización manual de inventario.
 $("inventorySearch")?.addEventListener("input", renderInventory);
+$("refreshSizeInventory")?.addEventListener("click", renderInventory);
 $("archivedSearch")?.addEventListener("input", renderArchived);
 $("refreshInventoryHistory")?.addEventListener("click", renderInventoryHistory);
 
