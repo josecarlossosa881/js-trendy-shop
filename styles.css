@@ -1842,11 +1842,11 @@
 
 /* OFERTAS: mejorar iluminación de fotografías */
 @media (max-width: 600px) {
-  .offer-grid .offer-product-card .pic {
-    background: #fff !important;
+  .offers-section .offer-grid .offer-product-card .pic {
+    background: #ffffff !important;
   }
 
-  .offer-grid .offer-product-card .pic img {
-    filter: brightness(1.08) contrast(1.03) !important;
+  .offers-section .offer-grid .offer-product-card .pic img {
+    filter: brightness(1.12) contrast(1.04) !important;
   }
 }
