@@ -1839,3 +1839,14 @@
     font-size: 13px !important;
   }
 }
+
+/* OFERTAS: mejorar iluminación de fotografías */
+@media (max-width: 600px) {
+  .offer-grid .offer-product-card .pic {
+    background: #fff !important;
+  }
+
+  .offer-grid .offer-product-card .pic img {
+    filter: brightness(1.08) contrast(1.03) !important;
+  }
+}
