@@ -503,19 +503,19 @@ async function openDetail(id){
   if(sizes.length) await refreshSizeInventory();
   const firstAvailable=sizes.find(s=>sizeStockFor(p.id,s)>0)||sizes[0]||"";
   detailSelectedSize=firstAvailable;
-  const sizeControls=sizes.length?`<div class="detail-sizes"><b>Selecciona talla</b><div class="detail-size-buttons" id="detailSizeButtons">${sizes.map(s=>{const stock=sizeStockFor(p.id,s);return `<button type="button" class="detail-size-option ${s===firstAvailable?'selected':''}" data-size="${esc(s)}" aria-pressed="${s===firstAvailable?'true':'false'}" ${stock<=0?'disabled':''}><strong>${esc(s)}</strong><span>${stock} disponibles</span></button>`;}).join('')}</div><p id="detailSizeStock" class="stock-note">${firstAvailable?`${sizeStockFor(p.id,firstAvailable)} disponibles de talla ${esc(firstAvailable)}`:'Selecciona una talla'}</p></div>`:'';
+  const sizeControls=sizes.length?`<div class="detail-sizes"><b>Selecciona talla</b><div id="detailSizeButtons" class="detail-size-buttons" role="group" aria-label="Seleccionar talla">${sizes.map(s=>{const stock=sizeStockFor(p.id,s);const selected=String(s).toLowerCase()===String(firstAvailable).toLowerCase();return `<button type="button" class="detail-size-button${selected?' selected':''}" data-size="${esc(s)}" aria-pressed="${selected?'true':'false'}" onclick="onDetailSizeChange(${JSON.stringify(s).replace(/</g,'\\u003c')})" ${stock<=0?'disabled':''}><strong>${esc(s)}</strong><span>${stock} ${stock===1?'disponible':'disponibles'}</span></button>`}).join('')}</div><p id="detailSizeStock" class="stock-note">${firstAvailable?`${sizeStockFor(p.id,firstAvailable)} disponibles de talla ${esc(firstAvailable)}`:'Selecciona una talla'}</p></div>`:'';
   const available=sizes.length?sizeStockFor(p.id,firstAvailable):Math.max(0,Number(p.stock)||0);
   document.getElementById("detailContent").innerHTML=`<div class="detail-image">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Sin imagen'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}<p>${esc(p.desc||'Producto seleccionado de JS Trendy Shop.')}</p>${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad">−</button><input id="detailQuantity" type="number" min="1" max="${Math.max(0,available)}" value="1" onchange="onDetailQuantityChange(this.value)"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad">+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?(available>0?`${available} disponibles de esta talla`:'Esta talla está agotada'):available>0?`${available} disponibles`:'Actualmente agotado'}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${available<=0?'disabled':''}>Agregar al carrito</button></div>`;
-  // Cada botón de talla selecciona esa talla y actualiza existencias/cantidad.
-  document.querySelectorAll('#detailSizeButtons .detail-size-option').forEach(btn=>{
-    btn.addEventListener('click',()=>onDetailSizeChange(btn.dataset.size));
-  });
   document.getElementById("detailModal").classList.remove("hidden");
 }
 function onDetailSizeChange(size){
   const p=products.find(x=>String(x.id)===String(detailId));if(!p)return;
   detailSelectedSize=size;detailQuantity=1;
-  document.querySelectorAll('#detailSizeButtons .detail-size-option').forEach(btn=>{const selected=btn.dataset.size===String(size);btn.classList.toggle('selected',selected);btn.setAttribute('aria-pressed',selected?'true':'false');});
+  document.querySelectorAll('#detailSizeButtons .detail-size-button').forEach(button=>{
+    const selected=String(button.dataset.size||'').toLowerCase()===String(size||'').toLowerCase();
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-pressed',selected?'true':'false');
+  });
   const available=sizeStockFor(p.id,size);
   const qty=document.getElementById("detailQuantity");if(qty){qty.value="1";qty.max=String(available);}
   const stock=document.getElementById("detailSizeStock");if(stock)stock.textContent=`${available} disponibles de talla ${size}`;
