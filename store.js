@@ -453,14 +453,25 @@ async function startStore(){
   document.getElementById("send").onclick=sendOrder;
   document.getElementById("detailClose").onclick=closeDetail;
   document.getElementById("detailModal").addEventListener("click",e=>{if(e.target.id==="detailModal")closeDetail();});
-  document.getElementById("toggleAllCategories")?.addEventListener("click",()=>{
-    const wrap=document.getElementById("cats");
-    const btn=document.getElementById("toggleAllCategories");
-    const expanded=wrap?.classList.toggle("expanded") || false;
-    btn?.setAttribute("aria-expanded",String(expanded));
-    if(btn) btn.innerHTML=(expanded?"Mostrar menos":"Ver todas las categorías")+' <span>→</span>';
-  });
+  document.querySelector('[data-category="Todos"]')?.addEventListener("click",chooseAll);
   document.getElementById("catalogAllBtn")?.addEventListener("click",chooseAll);
+  // Los botones de la portada despliegan el resto sin salir de la página.
+  const allCategoriesBtn=document.querySelector('[data-view-all-categories]');
+  allCategoriesBtn?.addEventListener("click",()=>{
+    const wrap=document.getElementById("cats");
+    if(!wrap) return;
+    const expanded=wrap.classList.toggle("is-expanded");
+    allCategoriesBtn.setAttribute("aria-expanded",String(expanded));
+    allCategoriesBtn.innerHTML=expanded?'Mostrar menos <span>−</span>':'Ver todas las categorías <span>＋</span>';
+  });
+  const allBrandsBtn=document.querySelector('[data-view-all-brands]');
+  allBrandsBtn?.addEventListener("click",()=>{
+    const wrap=document.getElementById("featuredBrands");
+    if(!wrap) return;
+    const expanded=wrap.classList.toggle("is-expanded");
+    allBrandsBtn.setAttribute("aria-expanded",String(expanded));
+    allBrandsBtn.innerHTML=expanded?'Mostrar menos marcas <span>−</span>':'Ver todas las marcas <span>＋</span>';
+  });
   // Cualquier enlace que lleve al Catálogo debe mostrar nuevamente TODO el catálogo,
   // limpiando la categoría, marca, talla y búsqueda que estuvieran seleccionadas.
   document.querySelectorAll('a[href="#catalogo"]').forEach(link=>{
@@ -468,13 +479,6 @@ async function startStore(){
       e.preventDefault();
       chooseAll();
     });
-  });
-  document.getElementById("toggleAllBrands")?.addEventListener("click",()=>{
-    const wrap=document.getElementById("featuredBrands");
-    const btn=document.getElementById("toggleAllBrands");
-    const expanded=wrap?.classList.toggle("expanded") || false;
-    btn?.setAttribute("aria-expanded",String(expanded));
-    if(btn) btn.innerHTML=(expanded?"Mostrar menos":"Ver todas las marcas")+' <span>→</span>';
   });
   document.getElementById("products").innerHTML='<p class="empty">Cargando productos...</p>';
   await loadProducts();
