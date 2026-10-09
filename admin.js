@@ -266,9 +266,10 @@ async function saveBrandsForCategory(category){
 }
 
 function renderImage(url, name){
+  const fallback = `<span class="admin-no-photo">Sin foto</span>`;
   return url
-    ? `<img src="${url}" alt="${name}" style="width:100%;height:100%;object-fit:cover">`
-    : "";
+    ? `<img src="${url}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="width:100%;height:100%;object-fit:contain"><span class="admin-no-photo" style="display:none">Sin foto</span>`
+    : fallback;
 }
 
 async function renderAdmin(){
@@ -608,42 +609,21 @@ async function renderSizeInventory(){
   wrap.innerHTML=`<table class="size-inventory-table"><thead><tr><th>Imagen</th><th>Producto</th><th>Talla</th><th>Stock</th><th>Vendidas</th><th>Acciones</th></tr></thead><tbody>${rows.map(r=>{
     const p=r.product;
     const photo=p.image?`<img src="${p.image}" alt="Imagen de ${p.name}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\'inventory-empty-photo\'>Sin foto</span>'">`:'<span class="inventory-empty-photo">Sin foto</span>';
-    return `<tr><td><div class="size-inventory-photo">${photo}</div></td><td><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td><b>${r.talla}</b></td><td><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td>${Number(r.vendidas)||0}</td><td><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button onclick="sizeStockAction(${r.id},'correccion')">Corregir prueba</button><button class="archive-size-btn" onclick="deleteProduct(${p.id})">Archivar</button></div></td></tr>`;
+    return `<tr><td data-label="Imagen"><div class="size-inventory-photo">${photo}</div></td><td data-label="Producto"><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td data-label="Talla"><b>${r.talla}</b></td><td data-label="Stock"><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td data-label="Vendidas">${Number(r.vendidas)||0}</td><td data-label="Acciones"><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button class="archive-size-btn" onclick="deleteProduct(${p.id})">Archivar</button></div></td></tr>`;
   }).join('')}</tbody></table>`;
  }catch(e){wrap.innerHTML=`<div class="empty" style="padding:20px">No se pudo cargar inventario por talla. Ejecuta inventario_tallas.sql en Supabase. ${e.message}</div>`;}
 }
 async function sizeStockAction(id,action){
  try{
   const {data:r,error}=await supabaseClient.from('inventario_tallas').select('*,productos(nombre)').eq('id',id).single();if(error)throw error;
-  let next,qty=0,nextSold=Number(r.vendidas)||0;
-  if(action==='venta'){
-   const raw=prompt(`¿Cuántas piezas de talla ${r.talla} se vendieron?\nExistencia: ${r.stock}`);if(raw===null)return;
-   if(!/^\d+$/.test(raw.trim())||Number(raw)<1||Number(raw)>Number(r.stock))return alert('Cantidad no válida o mayor que la existencia.');
-   qty=Number(raw);next=Number(r.stock)-qty;nextSold+=qty;
-  }else if(action==='entrada'){
-   const raw=prompt(`¿Cuántas piezas talla ${r.talla} entraron?`);if(raw===null)return;
-   if(!/^\d+$/.test(raw.trim())||Number(raw)<1)return alert('Escribe una cantidad válida.');
-   qty=Number(raw);next=Number(r.stock)+qty;
-  }else if(action==='correccion'){
-   if(!confirm(`Vas a corregir los datos de prueba de ${r.productos?.nombre||'este producto'} · talla ${r.talla}.\n\nStock actual: ${r.stock}\nVendidas actuales: ${r.vendidas}\n\nPodrás indicar los valores correctos. ¿Continuar?`))return;
-   const rawStock=prompt(`Stock REAL para talla ${r.talla}:`,String(r.stock));if(rawStock===null)return;
-   if(!/^\d+$/.test(rawStock.trim()))return alert('El stock debe ser un número entero igual o mayor que cero.');
-   const rawSold=prompt(`Unidades vendidas REALES para talla ${r.talla}:`,String(r.vendidas||0));if(rawSold===null)return;
-   if(!/^\d+$/.test(rawSold.trim()))return alert('Vendidas debe ser un número entero igual o mayor que cero.');
-   next=Number(rawStock);nextSold=Number(rawSold);qty=next-Number(r.stock);
-  }else{
-   const raw=prompt(`Existencia final para talla ${r.talla}:`,String(r.stock));if(raw===null)return;
-   if(!/^\d+$/.test(raw.trim()))return alert('Escribe una cantidad igual o mayor que cero.');
-   next=Number(raw);qty=next-Number(r.stock);
-  }
-  const defaultReason=action==='venta'?'Venta de talla '+r.talla:action==='entrada'?'Reposición talla '+r.talla:action==='correccion'?'Corrección de venta de prueba · talla '+r.talla:'Ajuste de stock · talla '+r.talla;
-  const motivo=prompt('Motivo (obligatorio):',defaultReason);if(motivo===null)return;if(!motivo.trim())return alert('El motivo es obligatorio.');
-  const {error:up}=await supabaseClient.from('inventario_tallas').update({stock:next,vendidas:nextSold,updated_at:new Date().toISOString()}).eq('id',id);if(up)throw up;
-  const movementType=action==='venta'?'venta':action==='entrada'?'entrada':action==='correccion'?'correccion':'ajuste';
-  const {error:log}=await supabaseClient.from('inventario_movimientos').insert({producto_id:r.producto_id,producto_nombre:(r.productos?.nombre||'Producto')+' · talla '+r.talla,tipo:movementType,cantidad:action==='venta'?-qty:qty,stock_anterior:Number(r.stock),stock_nuevo:next,motivo:motivo.trim()});
-  if(log)console.warn('Movimiento no guardado',log.message);
+  let next,qty=0;
+  if(action==='venta'){const raw=prompt(`¿Cuántas piezas de talla ${r.talla} se vendieron?\nExistencia: ${r.stock}`);if(raw===null)return;if(!/^\d+$/.test(raw.trim())||Number(raw)<1||Number(raw)>r.stock)return alert('Cantidad no válida o mayor que la existencia.');qty=Number(raw);next=r.stock-qty;}
+  else if(action==='entrada'){const raw=prompt(`¿Cuántas piezas talla ${r.talla} entraron?`);if(raw===null)return;if(!/^\d+$/.test(raw.trim())||Number(raw)<1)return alert('Escribe una cantidad válida.');qty=Number(raw);next=r.stock+qty;}
+  else{const raw=prompt(`Existencia final para talla ${r.talla}:`,String(r.stock));if(raw===null)return;if(!/^\d+$/.test(raw.trim()))return alert('Escribe una cantidad igual o mayor que cero.');next=Number(raw);qty=next-r.stock;}
+  const motivo=prompt('Motivo (obligatorio):',action==='venta'?'Venta de talla '+r.talla:action==='entrada'?'Reposición talla '+r.talla:'Ajuste talla '+r.talla);if(motivo===null)return;if(!motivo.trim())return alert('El motivo es obligatorio.');
+  const {error:up}=await supabaseClient.from('inventario_tallas').update({stock:next,vendidas:Number(r.vendidas)+(action==='venta'?qty:0),updated_at:new Date().toISOString()}).eq('id',id);if(up)throw up;
+  const {error:log}=await supabaseClient.from('inventario_movimientos').insert({producto_id:r.producto_id,producto_nombre:(r.productos?.nombre||'Producto')+' · talla '+r.talla,tipo:action==='venta'?'venta':action==='entrada'?'entrada':'ajuste',cantidad:action==='venta'?-qty:qty,stock_anterior:r.stock,stock_nuevo:next,motivo:motivo.trim()});if(log)console.warn('Movimiento no guardado',log.message);
   await renderSizeInventory();await renderInventoryHistory();
-  if(action==='correccion')alert('Corrección guardada. Se actualizaron stock y vendidas para esta talla; revisa los valores en inventario.');
  }catch(e){alert('No se pudo actualizar la talla: '+e.message);}
 }
 
@@ -780,6 +760,7 @@ document.querySelectorAll(".admin-menu > button").forEach(b => {
 
 // Búsquedas y actualización manual de inventario.
 $("inventorySearch")?.addEventListener("input", renderInventory);
+$("refreshSizeInventory")?.addEventListener("click", renderInventory);
 $("archivedSearch")?.addEventListener("input", renderArchived);
 $("refreshInventoryHistory")?.addEventListener("click", renderInventoryHistory);
 
