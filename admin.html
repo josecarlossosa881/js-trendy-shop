@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>JS Trendy Shop | Administrador</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="admin-responsive.css?v=20261009-3">
+  <link rel="stylesheet" href="admin-responsive.css?v=20261009-4">
   <style>
     .auth-screen{min-height:100vh;display:grid;place-items:center;padding:25px;background:#f5f3f1}
     .auth-box{width:min(430px,100%);background:#fff;border:1px solid #ddd8d4;border-radius:10px;padding:32px;box-shadow:0 12px 35px #00000012}
@@ -64,6 +64,87 @@
     .inventory-empty-photo{font-size:10px;color:#888;text-align:center}
     @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}.size-inventory-card{padding:8px}.size-inventory-table{min-width:790px}}
     @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}}
+  
+/* Ajustes responsive integrados para que funcionen aunque el CSS externo esté en caché. */
+@media (max-width: 700px) {
+  html, body.admin-body { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
+  #adminPanel { width:100% !important; max-width:100% !important; overflow-x:hidden !important; }
+  #adminPanel .admin-top {
+    display:flex !important; flex-direction:column !important; align-items:stretch !important;
+    gap:10px !important; padding:12px 14px !important; width:100% !important;
+  }
+  #adminPanel .admin-top > div {
+    display:flex !important; width:100% !important; min-width:0 !important;
+    align-items:center !important; justify-content:space-between !important; flex-wrap:wrap !important; gap:8px !important;
+  }
+  #adminPanel .admin-top > div:first-child a { font-size:13px !important; }
+  #adminPanel .admin-top strong { margin:0 !important; font-size:14px !important; }
+  #adminPanel .admin-user { font-size:12px !important; max-width:100% !important; overflow-wrap:anywhere !important; }
+  #adminPanel .logout-btn { padding:8px 10px !important; min-height:40px !important; }
+  #adminPanel .admin {
+    display:grid !important; grid-template-columns:minmax(0,1fr) !important;
+    gap:12px !important; width:100% !important; max-width:100% !important; padding:12px !important; margin:0 !important;
+  }
+  #adminPanel .admin > section, #adminPanel .admin-menu { width:100% !important; min-width:0 !important; max-width:100% !important; }
+  #adminPanel .admin-menu {
+    display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:7px !important; padding:10px !important; overflow:visible !important;
+  }
+  #adminPanel .admin-menu > button {
+    display:block !important; width:100% !important; min-width:0 !important; max-width:100% !important;
+    min-height:44px !important; padding:10px 8px !important; font-size:13px !important;
+    line-height:1.25 !important; white-space:normal !important; overflow-wrap:anywhere !important;
+  }
+  #adminPanel h1, #adminPanel #productsView h1, #adminPanel #inventoryView h1,
+  #adminPanel #archivedView h1, #adminPanel #categoriesView h1, #adminPanel #settingsView h1 {
+    font-size:clamp(30px,8vw,40px) !important; line-height:1.08 !important;
+    margin:4px 0 12px !important; overflow-wrap:anywhere !important;
+  }
+  #adminPanel .hint { font-size:14px !important; line-height:1.45 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+  #adminPanel #inventoryView { min-width:0 !important; width:100% !important; max-width:100% !important; }
+  #adminPanel #inventoryView > label { display:block !important; width:100% !important; margin:12px 0 !important; }
+  #adminPanel #inventorySearch { display:block !important; width:100% !important; max-width:100% !important; min-width:0 !important; font-size:14px !important; }
+  #adminPanel .size-inventory-card { width:100% !important; max-width:100% !important; min-width:0 !important; padding:10px !important; overflow:hidden !important; }
+  #adminPanel .size-inventory-card > div:first-child { align-items:flex-start !important; }
+  #adminPanel .size-inventory-card h2 { font-size:20px !important; line-height:1.2 !important; }
+  #adminPanel .size-inventory-scroll { width:100% !important; max-width:100% !important; overflow:visible !important; }
+  #adminPanel .size-inventory-table { display:block !important; width:100% !important; min-width:0 !important; max-width:100% !important; table-layout:fixed !important; border-collapse:separate !important; border-spacing:0 !important; }
+  #adminPanel .size-inventory-table thead { display:none !important; }
+  #adminPanel .size-inventory-table tbody { display:block !important; width:100% !important; }
+  #adminPanel .size-inventory-table tbody tr {
+    display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    gap:0 10px !important; width:100% !important; min-width:0 !important;
+    padding:12px 10px !important; margin:0 0 10px !important;
+    border:1px solid #e9e3de !important; border-radius:10px !important; background:#fff !important;
+  }
+  #adminPanel .size-inventory-table tbody td {
+    display:flex !important; align-items:center !important; justify-content:space-between !important;
+    gap:8px !important; width:auto !important; min-width:0 !important; padding:7px 0 !important;
+    border:0 !important; font-size:13px !important; overflow-wrap:anywhere !important;
+  }
+  #adminPanel .size-inventory-table tbody td::before {
+    content:attr(data-label); flex:0 0 auto; color:#77716b; font-size:10px;
+    font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+  }
+  #adminPanel .size-inventory-table tbody td:nth-child(1) { grid-column:1 !important; grid-row:1 !important; justify-content:flex-start !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(1)::before { content:none !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(2) { grid-column:1 / -1 !important; grid-row:2 !important; justify-content:flex-start !important; padding-top:2px !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(2)::before { content:none !important; }
+  #adminPanel .size-inventory-product { display:flex !important; min-width:0 !important; gap:8px !important; }
+  #adminPanel .size-inventory-name { font-size:14px !important; overflow-wrap:anywhere !important; }
+  #adminPanel .size-inventory-meta { font-size:11px !important; overflow-wrap:anywhere !important; }
+  #adminPanel .size-inventory-photo { width:48px !important; height:48px !important; flex:0 0 48px !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(3) { grid-column:1 !important; grid-row:3 !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(4) { grid-column:2 !important; grid-row:3 !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(5) { grid-column:1 / -1 !important; grid-row:4 !important; justify-content:flex-start !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(6) { grid-column:1 / -1 !important; grid-row:5 !important; display:block !important; padding-top:10px !important; border-top:1px solid #f0ece8 !important; }
+  #adminPanel .size-inventory-table tbody td:nth-child(6)::before { content:'ACCIONES' !important; display:block !important; margin-bottom:8px !important; }
+  #adminPanel .size-inventory-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; white-space:normal !important; }
+  #adminPanel .size-inventory-actions button { width:100% !important; min-width:0 !important; min-height:42px !important; padding:9px 7px !important; font-size:12px !important; white-space:normal !important; }
+  #adminPanel #productsView > div:first-child { align-items:flex-start !important; flex-wrap:wrap !important; gap:10px !important; }
+  #adminPanel #productsView > div:first-child > button { width:100% !important; min-height:44px !important; }
+}
+
   </style>
 </head>
 
