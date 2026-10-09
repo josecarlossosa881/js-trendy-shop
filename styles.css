@@ -1851,7 +1851,7 @@
   }
 }
 
-```css
+
 /* CORRECCIÓN: mostrar todas las categorías y las marcas en celular */
 @media (max-width: 700px) {
   .visual-cats > :nth-child(n+7) {
@@ -1876,4 +1876,3 @@
     height: 58px !important;
   }
 }
-```
