@@ -1922,3 +1922,12 @@
     font-size: clamp(11px, 3.2vw, 13px) !important;
   }
 }
+
+/* ===== RESPONSIVE: escritorio muestra todas las categorías y marcas ===== */
+@media (min-width: 701px) {
+  #categorias .visual-cats > * { display: block !important; }
+  #categorias .featured-brands > * { display: flex !important; }
+  #categorias .showcase-heading .view-all-toggle {
+    display: none !important;
+  }
+}
