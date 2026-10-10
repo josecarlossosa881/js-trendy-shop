@@ -2214,27 +2214,9 @@
 }
 
 
-/* Corrección navegación escritorio/móvil: orden y subrayado de sección activa */
-.nav nav a { position: relative !important; }
-.nav nav a.active::after {
-  content: "" !important;
-  position: absolute !important;
-  left: 12px !important;
-  right: 12px !important;
-  bottom: 7px !important;
-  height: 3px !important;
-  border-radius: 999px !important;
-  background: #181818 !important;
-  display: block !important;
-}
-@media (min-width: 701px) {
-  .nav nav { display: flex !important; }
-  .nav nav a { white-space: nowrap !important; }
-  .nav nav a.active::after { bottom: 7px !important; }
-}
-@media (max-width: 700px) {
-  .nav nav { display: flex !important; }
-  .nav nav a { flex: 1 1 0 !important; text-align: center !important; }
-  .nav nav a.active::after { left: 12px !important; right: 12px !important; bottom: 7px !important; }
-}
-
+/* Orden definitivo de navegación: Inicio, Categorías, Catálogo, Ofertas. */
+.nav nav { display: flex !important; }
+.nav nav a[href="#inicio"] { order: 1 !important; }
+.nav nav a[href="#categorias"] { order: 2 !important; }
+.nav nav a[href="#catalogo"] { order: 3 !important; }
+.nav nav a[href="#ofertas"] { order: 4 !important; }
