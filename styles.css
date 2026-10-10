@@ -1559,6 +1559,71 @@
     width: min(92vw, 400px) !important;
   }
 
+  /* Favoritos en móvil: panel completo, encabezado y salida siempre visibles. */
+  #favorites.favorites-panel {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: auto !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+    z-index: 1001 !important;
+    border-radius: 0 !important;
+    overscroll-behavior: contain;
+  }
+
+  #favorites .cart-head {
+    position: relative !important;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: max(8px, env(safe-area-inset-top)) 0 14px !important;
+    background: #fff !important;
+    border-bottom: 1px solid #eee !important;
+  }
+
+  #favorites #favoritesClose {
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid #ddd !important;
+    border-radius: 50% !important;
+    background: #f7f6f4 !important;
+    color: #181818 !important;
+    font-size: 30px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    inset: auto !important;
+  }
+
+  #favorites .favorite-items {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #favorites > small {
+    flex: 0 0 auto !important;
+    padding-top: 12px !important;
+    background: #fff !important;
+  }
+
   footer {
     gap: 8px !important;
     padding: 24px 14px !important;
@@ -2211,4 +2276,52 @@
     right: 7px !important;
     top: 7px !important;
   }
+}
+
+
+/* Miniatura del producto dentro del carrito: permite confirmar visualmente cada artículo. */
+.cart-line{
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+}
+.cart-line-image{
+  width:72px;
+  height:84px;
+  border-radius:8px;
+  overflow:hidden;
+  background:#f4f4f4;
+  display:grid;
+  place-items:center;
+  color:#777;
+  font-size:10px;
+  text-align:center;
+  flex-shrink:0;
+}
+.cart-line-image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.cart-line-info{min-width:0;flex:initial}
+.cart-line-info>b{display:block;line-height:1.25}
+.cart-line-info>small{display:inline-block}
+.cart-line-actions{min-width:max-content}
+@media(max-width:600px){
+  .cart-line{
+    grid-template-columns:64px minmax(0,1fr);
+    gap:10px;
+    align-items:start;
+  }
+  .cart-line-image{width:64px;height:76px}
+  .cart-line-actions{
+    grid-column:2;
+    justify-content:flex-start;
+    min-width:0;
+    gap:7px;
+    margin-top:2px;
+  }
+  .cart-line-info{overflow-wrap:anywhere}
 }
