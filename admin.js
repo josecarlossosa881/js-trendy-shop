@@ -649,15 +649,43 @@ async function archiveProductSize(sizeRowId, productId){
     const remaining=sizes.filter(size=>size.toLocaleLowerCase()!==String(row.talla||"").trim().toLocaleLowerCase());
     if(remaining.length===sizes.length) throw new Error("No se encontró esa talla en el producto. Actualiza el inventario y vuelve a intentarlo.");
     if(!confirm(`¿Archivar únicamente la talla ${row.talla} de “${product.nombre}”?\n\nEsta talla dejará de mostrarse en el catálogo. Las demás tallas y sus existencias no cambiarán.`)) return;
+    // Guardar primero una copia recuperable de la talla antes de quitarla del catálogo.
+    const {error:saveError}=await supabaseClient.from("tallas_archivadas").insert({producto_id:String(productId),producto_nombre:product.nombre||"Producto",talla:String(row.talla),stock:Number(row.stock)||0,vendidas:Number(row.vendidas)||0});
+    if(saveError) throw new Error("No se pudo guardar la talla en Archivados. Ejecuta primero el SQL incluido. Detalle: "+saveError.message);
     const {error:updateError}=await supabaseClient.from("productos").update({talla:remaining.join(", ")}).eq("id",productId);
-    if(updateError) throw updateError;
+    if(updateError){
+      await supabaseClient.from("tallas_archivadas").delete().eq("producto_id",String(productId)).eq("talla",String(row.talla));
+      throw updateError;
+    }
     const {error:logError}=await supabaseClient.from("inventario_movimientos").insert({producto_id:productId,producto_nombre:(product.nombre||"Producto")+" · talla "+row.talla,tipo:"archivo_talla",cantidad:0,stock_anterior:Number(row.stock)||0,stock_nuevo:Number(row.stock)||0,motivo:"Talla archivada individualmente desde inventario"});
     if(logError) console.warn("No se pudo registrar el archivo de talla:",logError.message);
-    await renderSizeInventory();
-    await renderInventoryHistory();
-    await renderAdmin();
-    alert(`Se archivó únicamente la talla ${row.talla}. Las demás tallas siguen disponibles.`);
+    await renderSizeInventory(); await renderInventoryHistory(); await renderAdmin(); await renderArchived();
+    alert(`Se archivó la talla ${row.talla}. Ya aparece en Productos archivados.`);
   }catch(error){console.error(error);alert("No se pudo archivar la talla: "+error.message);}
+}
+
+async function restoreArchivedSize(id){
+  try{
+    const {data:r,error}=await supabaseClient.from("tallas_archivadas").select("*").eq("id",id).single(); if(error)throw error;
+    const {data:p,error:pe}=await supabaseClient.from("productos").select("id,nombre,talla").eq("id",r.producto_id).single(); if(pe)throw pe;
+    if(!confirm(`¿Recuperar la talla ${r.talla} de “${p.nombre}”?`))return;
+    const sizes=String(p.talla||"").split(/[,/|]+/).map(x=>x.trim()).filter(Boolean);
+    if(!sizes.some(x=>x.toLowerCase()===String(r.talla).toLowerCase())) sizes.push(String(r.talla));
+    const {error:up}=await supabaseClient.from("productos").update({talla:sizes.join(", ")}).eq("id",p.id); if(up)throw up;
+    const {error:del}=await supabaseClient.from("tallas_archivadas").delete().eq("id",id); if(del)throw del;
+    await renderArchived(); await renderAdmin(); await renderInventory();
+    alert(`Talla ${r.talla} recuperada.`);
+  }catch(e){console.error(e);alert("No se pudo recuperar la talla: "+e.message);}
+}
+
+async function permanentlyDeleteArchivedSize(id){
+  try{
+    const {data:r,error}=await supabaseClient.from("tallas_archivadas").select("id,producto_nombre,talla,stock,vendidas").eq("id",id).single(); if(error)throw error;
+    if(!confirm(`¿Eliminar definitivamente la talla ${r.talla} de “${r.producto_nombre}”?\n\nSolo se eliminará esta talla archivada. Esta acción no se puede deshacer.`))return;
+    const {error:del}=await supabaseClient.from("tallas_archivadas").delete().eq("id",id); if(del)throw del;
+    await renderArchived();
+    alert(`La talla ${r.talla} se eliminó de Archivados.`);
+  }catch(e){console.error(e);alert("No se pudo eliminar la talla: "+e.message);}
 }
 
 async function sizeStockAction(id,action){
@@ -704,9 +732,16 @@ async function renderArchived(){
   if(!wrap) return;
   try{
     const query=String($("archivedSearch")?.value||"").trim().toLowerCase();
-    const products=(await getProducts()).filter(p=>!p.activo).filter(p=>[p.name,p.brand,p.category,p.model,p.talla].join(" ").toLowerCase().includes(query));
-    wrap.innerHTML=products.map(p=>inventoryProductMarkup(p,true)).join("") || '<div class="empty">No hay productos archivados.</div>';
-  }catch(error){ wrap.innerHTML=`<div class="empty">No se pudieron cargar los productos archivados: ${error.message}</div>`; }
+    const [{data:products,error:productError},{data:sizes,error:sizeError}]=await Promise.all([
+      supabaseClient.from("productos").select("id,nombre,marca,categoria,modelo,talla,stock,activo,imagen").eq("activo",false).order("id",{ascending:false}),
+      supabaseClient.from("tallas_archivadas").select("*").order("archivada_en",{ascending:false})
+    ]);
+    if(productError) throw productError;
+    if(sizeError) throw new Error("No se pudieron consultar las tallas archivadas. Ejecuta el SQL incluido. "+sizeError.message);
+    const archivedProducts=(products||[]).filter(p=>[p.nombre,p.marca,p.categoria,p.modelo,p.talla].join(" ").toLowerCase().includes(query)).map(p=>inventoryProductMarkup(p,true)).join("");
+    const archivedSizes=(sizes||[]).filter(r=>[r.producto_nombre,r.talla].join(" ").toLowerCase().includes(query)).map(r=>`<div class="admin-product-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #ddd;border-radius:10px;margin:8px 0"><div><b>${r.producto_nombre||"Producto"}</b><div>Talla: <b>${r.talla}</b> · Stock guardado: ${Number(r.stock)||0} · Vendidas: ${Number(r.vendidas)||0}</div><small>Archivado: ${r.archivada_en?new Date(r.archivada_en).toLocaleString("es-MX"):""}</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="restoreArchivedSize(${r.id})">Recuperar</button><button class="danger" onclick="permanentlyDeleteArchivedSize(${r.id})">Eliminar</button></div></div>`).join("");
+    wrap.innerHTML=(archivedSizes+archivedProducts)||'<div class="empty">No hay productos ni tallas archivados.</div>';
+  }catch(error){ wrap.innerHTML=`<div class="empty">No se pudieron cargar los archivados: ${error.message}</div>`; }
 }
 
 async function logInventoryMovement({product,type,quantity,before,after,reason}){
