@@ -507,13 +507,16 @@ async function openDetail(id){
   const sizes=sizesForProduct(p);
   if(sizes.length) await refreshSizeInventory();
   const available=sizes.length?0:Math.max(0,Number(p.stock)||0);
-  const sizeControls=sizes.length?`<div class="detail-sizes"><b>Selecciona talla</b><div id="detailSizeButtons" class="detail-size-buttons" role="group" aria-label="Seleccionar talla">${sizes.map(s=>{const stock=sizeStockFor(p.id,s);return `<button type="button" class="detail-size-button" data-size="${esc(s)}" aria-pressed="false" onclick="onDetailSizeChange(${JSON.stringify(s).replace(/</g,'\\u003c')})" ${stock<=0?'disabled':''}><strong>${esc(s)}</strong><span>${stock} ${stock===1?'disponible':'disponibles'}</span></button>`}).join('')}</div><p id="detailSizeStock" class="stock-note">Selecciona una talla para consultar las piezas disponibles.</p></div>`:'';
+  const sizeControls=sizes.length?`<div class="detail-sizes"><b>Selecciona talla</b><div id="detailSizeButtons" class="detail-size-buttons" role="group" aria-label="Seleccionar talla">${sizes.map(s=>{const stock=sizeStockFor(p.id,s);return `<button type="button" class="detail-size-button" data-size="${esc(s)}" aria-pressed="false" ${stock<=0?'disabled':''}><strong>${esc(s)}</strong><span>${stock} ${stock===1?'disponible':'disponibles'}</span></button>`}).join('')}</div><p id="detailSizeStock" class="stock-note">Selecciona una talla para consultar las piezas disponibles.</p></div>`:'';
   const description=p.desc?`<p>${esc(p.desc)}</p>`:'';
   document.getElementById("detailContent").innerHTML=`<div class="detail-image">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Sin imagen'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}${description}${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad" ${sizes.length?'disabled':''}>−</button><input id="detailQuantity" type="number" min="1" max="${Math.max(0,available)}" value="1" onchange="onDetailQuantityChange(this.value)" ${sizes.length?'disabled':''}><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad" ${sizes.length?'disabled':''}>+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?'Selecciona una talla':'Actualmente agotado'}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${sizes.length||available<=0?'disabled':''}>Agregar al carrito</button></div>`;
   document.getElementById("detailModal").classList.remove("hidden");
-  // Seleccionar la primera talla con existencias para habilitar cantidad y carrito.
-  const firstAvailableSize = sizes.find(s => sizeStockFor(p.id, s) > 0);
-  if (firstAvailableSize) onDetailSizeChange(firstAvailableSize);
+  // No seleccionar tallas automáticamente: el cliente debe elegirla.
+  // Los eventos se conectan después de dibujar los botones para que funcionen
+  // de forma consistente en móvil y escritorio.
+  document.querySelectorAll('#detailSizeButtons .detail-size-button:not(:disabled)').forEach(button=>{
+    button.addEventListener('click',()=>onDetailSizeChange(button.dataset.size));
+  });
 }
 function onDetailSizeChange(size){
   const p=products.find(x=>String(x.id)===String(detailId));
