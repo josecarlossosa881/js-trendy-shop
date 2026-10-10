@@ -1975,3 +1975,28 @@
 .detail-quantity-buttons button:disabled,.detail-quantity-buttons input:disabled{opacity:1;cursor:pointer;background:#fff;color:#181818;border-color:#d7d2ce}
 #detailAddBtn:disabled{opacity:.45;cursor:not-allowed}
 .detail-size-button:not(:disabled){cursor:pointer}
+
+
+/* VISOR DE FOTO COMPLETA DEL PRODUCTO; no altera el diseño de escritorio */
+.detail-image-open{position:relative;display:block;width:100%;height:100%;min-height:inherit;padding:0;border:0;background:transparent;cursor:zoom-in;color:inherit}
+.detail-image-open img{display:block;width:100%;height:100%;object-fit:contain}
+.detail-image-hint{position:absolute;left:10px;right:10px;bottom:10px;padding:7px 10px;border-radius:999px;background:rgba(24,24,24,.72);color:#fff;font-size:12px;text-align:center;opacity:0;transition:opacity .15s}
+.detail-image-open:focus-visible .detail-image-hint,.detail-image-open:hover .detail-image-hint{opacity:1}
+.product-image-viewer{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.94);touch-action:pan-x pan-y pinch-zoom}
+.product-image-viewer.hidden{display:none!important}
+.product-image-viewer img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;touch-action:pinch-zoom;user-select:none}
+.product-image-viewer-close{position:absolute;top:max(14px,env(safe-area-inset-top));right:16px;width:44px;height:44px;border:0;border-radius:50%;background:#fff;color:#181818;font-size:32px;line-height:1;cursor:pointer;z-index:1}
+@media(max-width:700px){.detail-box{max-height:90dvh!important}.detail-content{align-items:start}.detail-image{height:auto!important;min-height:0!important;aspect-ratio:4/5;max-height:52dvh;overflow:hidden}.detail-image-open{height:100%;min-height:0}.detail-image-open img{object-fit:contain;object-position:center}.detail-image-hint{opacity:1;font-size:11px;bottom:7px;padding:6px 8px}.product-image-viewer{padding:12px}.product-image-viewer img{max-width:100%;max-height:calc(100dvh - 28px);object-fit:contain}}
+
+
+/* Título de descripción visible en escritorio */
+.detail-description-title{display:block;margin:12px 0 8px;font-size:16px;font-weight:700;line-height:1.3;color:inherit}
+/* Descripción plegable solo en móvil; en escritorio conserva su presentación actual */
+.detail-description-toggle{display:none}
+@media(max-width:700px){
+  .detail-description-title{display:none}
+  .detail-description-toggle{display:inline-flex;align-items:center;justify-content:space-between;gap:14px;width:auto;max-width:100%;margin:8px 0 12px;padding:10px 14px;border:1px solid #dedbd7;border-radius:999px;background:#fff;color:#222;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .detail-description-toggle span{font-size:18px;line-height:1}
+  .detail-description:not(.expanded){display:none}
+  .detail-description{margin-top:0}
+}
