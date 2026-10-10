@@ -733,15 +733,53 @@ async function renderArchived(){
   try{
     const query=String($("archivedSearch")?.value||"").trim().toLowerCase();
     const [{data:products,error:productError},{data:sizes,error:sizeError}]=await Promise.all([
-      supabaseClient.from("productos").select("id,nombre,marca,categoria,modelo,talla,stock,activo,imagen").eq("activo",false).order("id",{ascending:false}),
+      // Se consultan todos los productos para recuperar la foto y los datos
+      // del modelo de una talla archivada, aunque el producto siga activo.
+      supabaseClient.from("productos").select("id,nombre,marca,categoria,modelo,talla,stock,activo,imagen").order("id",{ascending:false}),
       supabaseClient.from("tallas_archivadas").select("*").order("archivada_en",{ascending:false})
     ]);
     if(productError) throw productError;
-    if(sizeError) throw new Error("No se pudieron consultar las tallas archivadas. Ejecuta el SQL incluido. "+sizeError.message);
-    const archivedProducts=(products||[]).filter(p=>[p.nombre,p.marca,p.categoria,p.modelo,p.talla].join(" ").toLowerCase().includes(query)).map(p=>inventoryProductMarkup(p,true)).join("");
-    const archivedSizes=(sizes||[]).filter(r=>[r.producto_nombre,r.talla].join(" ").toLowerCase().includes(query)).map(r=>`<div class="admin-product-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid #ddd;border-radius:10px;margin:8px 0"><div><b>${r.producto_nombre||"Producto"}</b><div>Talla: <b>${r.talla}</b> · Stock guardado: ${Number(r.stock)||0} · Vendidas: ${Number(r.vendidas)||0}</div><small>Archivado: ${r.archivada_en?new Date(r.archivada_en).toLocaleString("es-MX"):""}</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="restoreArchivedSize(${r.id})">Recuperar</button><button class="danger" onclick="permanentlyDeleteArchivedSize(${r.id})">Eliminar</button></div></div>`).join("");
+    if(sizeError) throw new Error("No se pudieron consultar las tallas archivadas. Comprueba la tabla tallas_archivadas en Supabase. "+sizeError.message);
+
+    const allProducts=products||[];
+    const productById=new Map(allProducts.map(p=>[String(p.id),p]));
+    const archivedProducts=allProducts
+      .filter(p=>p.activo===false)
+      .filter(p=>[p.nombre,p.marca,p.categoria,p.modelo,p.talla].join(" ").toLowerCase().includes(query))
+      .map(p=>inventoryProductMarkup(p,true)).join("");
+
+    const archivedSizes=(sizes||[])
+      .filter(r=>{
+        const p=productById.get(String(r.producto_id));
+        return [r.producto_nombre,r.talla,p?.marca,p?.categoria,p?.modelo].join(" ").toLowerCase().includes(query);
+      })
+      .map(r=>{
+        const p=productById.get(String(r.producto_id))||{};
+        const name=r.producto_nombre||p.nombre||"Producto";
+        const image=p.imagen||"";
+        const photo=image
+          ? `<img src="${image}" alt="Imagen de ${name}" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\'font-size:11px;color:#777\'>Sin foto</span>'">`
+          : `<span style="font-size:11px;color:#777">Sin foto</span>`;
+        const meta=[p.marca,p.categoria,p.modelo].filter(Boolean).join(" · ");
+        return `<div class="admin-item inventory-row" style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #ddd;border-radius:10px;margin:8px 0;background:#fff">
+          <div class="pic" style="width:65px;height:65px;flex:0 0 65px;display:flex;align-items:center;justify-content:center;overflow:hidden">${photo}</div>
+          <div class="grow" style="min-width:0;flex:1">
+            <b>${name}</b><br>
+            <small>${meta}</small><br>
+            <small>Talla: <b>${r.talla}</b></small><br>
+            <small><b>Existencia: ${Number(r.stock)||0} unidades</b>${Number(r.vendidas)?` · Vendidas: ${Number(r.vendidas)}`:""}</small><br>
+            <small>Archivado: ${r.archivada_en?new Date(r.archivada_en).toLocaleString("es-MX"):""}</small>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+            <button onclick="restoreArchivedSize(${r.id})">Recuperar</button>
+            <button class="danger" onclick="permanentlyDeleteArchivedSize(${r.id})">Eliminar</button>
+          </div>
+        </div>`;
+      }).join("");
     wrap.innerHTML=(archivedSizes+archivedProducts)||'<div class="empty">No hay productos ni tallas archivados.</div>';
-  }catch(error){ wrap.innerHTML=`<div class="empty">No se pudieron cargar los archivados: ${error.message}</div>`; }
+  }catch(error){
+    wrap.innerHTML=`<div class="empty">No se pudieron cargar los archivados: ${error.message}</div>`;
+  }
 }
 
 async function logInventoryMovement({product,type,quantity,before,after,reason}){
