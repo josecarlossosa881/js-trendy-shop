@@ -377,13 +377,19 @@ function chooseBrand(name){
   renderStore();
 }
 function chooseAll(){
+  // Restablece todos los filtros del catálogo, sin tocar carrito, favoritos ni ofertas.
   activeCategory = "Todos";
   activeBrand = "Todas";
   activeSize = "Todas";
+  catalogSort = "default";
   const search = document.getElementById("search");
   if(search) search.value = "";
+  const sort = document.getElementById("catalogSort");
+  if(sort) sort.value = "default";
   renderStore();
-  document.getElementById("catalogo")?.scrollIntoView({behavior:"smooth", block:"start"});
+  // Lleva al área de productos para que el cliente vea el catálogo completo.
+  const catalog = document.getElementById("catalogo");
+  if(catalog) catalog.scrollIntoView({behavior:"smooth", block:"start"});
 }
 function chooseCategory(name){
   const normalized=String(name||"").trim().toLowerCase();
@@ -668,6 +674,25 @@ async function startStore(){
   document.getElementById("detailModal").addEventListener("click",e=>{if(e.target.id==="detailModal")closeDetail();});
   document.querySelector('[data-category="Todos"]')?.addEventListener("click",chooseAll);
   document.getElementById("catalogAllBtn")?.addEventListener("click",chooseAll);
+
+  // Delegación adicional: el enlace "Ver todo →" del encabezado del catálogo
+  // no siempre tiene el mismo ID/clase en las versiones de escritorio y móvil.
+  document.addEventListener("click", event => {
+    const trigger = event.target.closest("a, button, [role=\"button\"]");
+    if(!trigger) return;
+    const label = String(trigger.innerText || trigger.getAttribute("aria-label") || "")
+      .replace(/[→➜➝＋]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+    const inCatalogHeader = !!trigger.closest("#catalogo .catalog-header, #catalogo .catalog-heading, #catalogo .catalog-top, #catalogo .section-intro, #catalogo .catalog-title-wrap");
+    const catalogLink = trigger.matches('a[href="#catalogo"]') || trigger.matches('[data-reset-catalog]');
+    const isViewAll = /^(ver todo|ver todo el catálogo|ver todos|ver todos los productos|ver catálogo completo|todos los productos)$/.test(label);
+    if(catalogLink || (inCatalogHeader && isViewAll)){
+      event.preventDefault();
+      chooseAll();
+    }
+  });
   // Los botones de la portada despliegan el resto sin salir de la página.
   const allCategoriesBtn=document.querySelector('[data-view-all-categories]');
   allCategoriesBtn?.addEventListener("click",()=>{
