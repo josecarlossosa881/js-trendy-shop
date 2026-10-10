@@ -1970,7 +1970,8 @@
 .detail-quantity-buttons button:disabled,.detail-quantity-buttons input:disabled{opacity:.45;cursor:not-allowed;background:#f3f3f3}
 @media(max-width:700px){.detail-size-buttons{gap:7px}.detail-size-button{min-height:60px;border-radius:14px;padding:7px}.detail-size-button strong{font-size:19px}.detail-size-button span{font-size:12px}}
 
-/* Ajuste puntual: botones de talla compactos, sin alterar el resto del modal */
-.detail-size-button{min-height:72px;padding:9px 8px;border-radius:16px;gap:5px}
-.detail-size-button strong{font-size:21px}
-.detail-size-button span{font-size:13px}
+
+/* v7: controles visibles antes de elegir talla; agregar sigue exigiendo una talla */
+.detail-quantity-buttons button:disabled,.detail-quantity-buttons input:disabled{opacity:1;cursor:pointer;background:#fff;color:#181818;border-color:#d7d2ce}
+#detailAddBtn:disabled{opacity:.45;cursor:not-allowed}
+.detail-size-button:not(:disabled){cursor:pointer}
