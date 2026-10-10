@@ -2212,3 +2212,21 @@
     top: 7px !important;
   }
 }
+
+
+/* Línea activa sincronizada con la sección visible (escritorio y móvil). */
+.nav nav a { position:relative; }
+.nav nav a.active { font-weight:700 !important; }
+.nav nav a.active::after {
+  content:"" !important;
+  position:absolute !important;
+  left:20% !important;
+  right:20% !important;
+  bottom:1px !important;
+  height:3px !important;
+  border-radius:4px !important;
+  background:#181818 !important;
+  display:block !important;
+}
+html { scroll-padding-top:120px; }
+@media(max-width:850px){ html { scroll-padding-top:112px; } }
