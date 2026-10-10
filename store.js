@@ -610,19 +610,76 @@ function openProductImage(src,name){
 }
 function closeDetail(){document.getElementById("detailModal").classList.add("hidden");detailId=null;}
 
-async function startStore(){
-  // Orden solicitado en la barra: Inicio, Categorías, Catálogo, Ofertas.
-  // Movemos los enlaces reales (no solo visualmente) para conservar sus destinos y estados activos.
-  const mainNav = document.querySelector('.nav nav');
-  if (mainNav) {
-    const categoriesLink = mainNav.querySelector('a[href="#categorias"]');
-    const catalogLink = mainNav.querySelector('a[href="#catalogo"]');
-    if (categoriesLink && catalogLink && categoriesLink.compareDocumentPosition(catalogLink) & Node.DOCUMENT_POSITION_FOLLOWING) {
-      mainNav.insertBefore(categoriesLink, catalogLink);
-    }
-  }
 
+// Navegación fija: mueve el indicador negro según la sección visible,
+// tanto en móvil como en escritorio.
+function setupSectionNavigation(){
+  const nav = document.querySelector('.nav nav[aria-label="Navegación principal"]');
+  if(!nav) return;
+  const links = [...nav.querySelectorAll('a[href^="#"]')];
+  const sections = links
+    .map(link => ({link, section: document.getElementById(link.getAttribute('href').slice(1))}))
+    .filter(item => item.section);
+  if(!sections.length) return;
+
+  let currentId = '';
+  const setActive = (id) => {
+    if(!id || id === currentId) return;
+    currentId = id;
+    sections.forEach(({link, section}) => {
+      const active = section.id === id;
+      link.classList.toggle('active', active);
+      if(active) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  };
+
+  const updateActiveFromScroll = () => {
+    const header = document.querySelector('.nav');
+    const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+    // La sección activa es la última que ya alcanzó la franja visible justo
+    // debajo del menú fijo. Es estable en móvil y escritorio y no depende
+    // de qué entradas aisladas entregue IntersectionObserver.
+    const activationLine = headerBottom + 55;
+    let current = sections[0];
+    for(const item of sections){
+      if(item.section.getBoundingClientRect().top <= activationLine) current = item;
+      else break;
+    }
+    // Al llegar al final de la página, Ofertas/Footer se considera la sección final.
+    if(window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8){
+      const offers = sections.find(item => item.section.id === 'ofertas');
+      if(offers) current = offers;
+    }
+    setActive(current.section.id);
+  };
+
+  links.forEach(link => link.addEventListener('click', () => {
+    const id = link.getAttribute('href').slice(1);
+    if(sections.some(item => item.section.id === id)) setActive(id);
+    // Recalcular después del desplazamiento nativo del enlace.
+    requestAnimationFrame(updateActiveFromScroll);
+    setTimeout(updateActiveFromScroll, 350);
+  }));
+
+  let ticking = false;
+  const onScroll = () => {
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      updateActiveFromScroll();
+      ticking = false;
+    });
+  };
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', updateActiveFromScroll);
+  window.addEventListener('hashchange', updateActiveFromScroll);
+  updateActiveFromScroll();
+}
+
+async function startStore(){
   if(!document.getElementById("products"))return;
+  setupSectionNavigation();
   document.getElementById("search").oninput=renderStore;
   document.getElementById("catalogSort")?.addEventListener("change",e=>{catalogSort=e.target.value;renderStore();});
   document.getElementById("cartBtn").onclick=openCart;
