@@ -355,7 +355,7 @@ async function sendOrder(){
     const p=products.find(x=>String(x.id)===String(i.id)); if(!p)return;
     total+=p.price*i.qty;
     msg+=`• ${p.name}${i.size?` — Talla ${i.size}`:""} x${i.qty} — ${money(p.price*i.qty)}\n`;
-    if(p.image) msg+=`📸 Foto del producto: https://jstrendyshop.com/f.html?id=${encodeURIComponent(p.id)}\n`;
+    msg+=`📸 Foto del producto: https://jstrendyshop.com/f.html?id=${encodeURIComponent(p.id)}\n`;
   });
   msg+=`\nTotal: ${money(total)}\n\n¿Me confirman disponibilidad?`;
   const wa=localStorage.getItem("jsWhatsApp")||"526624262742";
