@@ -2214,19 +2214,27 @@
 }
 
 
-/* Línea activa sincronizada con la sección visible (escritorio y móvil). */
-.nav nav a { position:relative; }
-.nav nav a.active { font-weight:700 !important; }
+/* Corrección navegación escritorio/móvil: orden y subrayado de sección activa */
+.nav nav a { position: relative !important; }
 .nav nav a.active::after {
-  content:"" !important;
-  position:absolute !important;
-  left:20% !important;
-  right:20% !important;
-  bottom:1px !important;
-  height:3px !important;
-  border-radius:4px !important;
-  background:#181818 !important;
-  display:block !important;
+  content: "" !important;
+  position: absolute !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 7px !important;
+  height: 3px !important;
+  border-radius: 999px !important;
+  background: #181818 !important;
+  display: block !important;
 }
-html { scroll-padding-top:120px; }
-@media(max-width:850px){ html { scroll-padding-top:112px; } }
+@media (min-width: 701px) {
+  .nav nav { display: flex !important; }
+  .nav nav a { white-space: nowrap !important; }
+  .nav nav a.active::after { bottom: 7px !important; }
+}
+@media (max-width: 700px) {
+  .nav nav { display: flex !important; }
+  .nav nav a { flex: 1 1 0 !important; text-align: center !important; }
+  .nav nav a.active::after { left: 12px !important; right: 12px !important; bottom: 7px !important; }
+}
+
