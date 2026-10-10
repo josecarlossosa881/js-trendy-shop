@@ -255,14 +255,7 @@ function toggleFavorite(id){
   else favorites.push(key);
   saveFavorites(); updateFavoriteCount(); renderFavorites(); renderStore();
 }
-function openFavorites(){
-  const panel=document.getElementById("favorites");
-  if(!panel) return;
-  if(panel.classList.contains("open")) { closeFavorites(); return; }
-  renderFavorites();
-  panel.classList.add("open");
-  document.getElementById("shade")?.classList.add("open");
-}
+function openFavorites(){ const panel=document.getElementById("favorites"); if(!panel)return; renderFavorites(); panel.classList.add("open"); document.getElementById("shade")?.classList.add("open"); }
 function closeFavorites(){ document.getElementById("favorites")?.classList.remove("open"); if(!document.getElementById("cart")?.classList.contains("open")) document.getElementById("shade")?.classList.remove("open"); }
 function renderFavorites(){
   favorites=favorites.filter(id=>products.some(p=>String(p.id)===String(id))); saveFavorites(); updateFavoriteCount();
@@ -731,13 +724,6 @@ async function startStore(){
   }
   document.getElementById("favoritesBtn")?.addEventListener("click",openFavorites);
   document.getElementById("favoritesClose")?.addEventListener("click",closeFavorites);
-  document.addEventListener("keydown", event => {
-    if(event.key === "Escape") {
-      closeFavorites();
-      closeCart();
-      closeDetail();
-    }
-  });
   document.getElementById("close").onclick=closeCart;
   document.getElementById("shade").onclick=()=>{ closeCart(); closeFavorites(); };
   document.getElementById("send").onclick=sendOrder;
