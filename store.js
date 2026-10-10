@@ -288,7 +288,7 @@ function stockLabel(p){
   }
   return Number(p.stock)>0?`${Number(p.stock)} disponibles`:'Agotado';
 }
-async function add(id,size="",quantity=1){
+async function add(id,size="",quantity=1,replaceExisting=false){
   const p=products.find(x=>String(x.id)===String(id)); if(!p) return;
   const sizes=sizesForProduct(p);
   if(sizes.length && !size){ openDetail(id); return; }
@@ -298,11 +298,14 @@ async function add(id,size="",quantity=1){
   }
   const key=`${String(p.id)}::${String(size||"").toLowerCase()}`;
   const existing=cart.find(i=>cartKey(i)===key);
-  const wanted=(existing?.qty||0)+Math.max(1,Number(quantity)||1);
+  const requested=Math.max(1,Number(quantity)||1);
+  // Desde el detalle, la cantidad elegida representa el total deseado para esa talla;
+  // no se vuelve a sumar la cantidad que ya estuviera en el carrito.
+  const wanted=replaceExisting ? requested : (existing?.qty||0)+requested;
   const available=productAvailable(p,size);
   if(available<=0) return alert(size?`La talla ${size} está agotada.`:"Este producto está agotado.");
   if(wanted>available) return alert(`Solo hay ${available} ${size?`pieza(s) de talla ${size}`:'unidad(es)'} disponibles. Ajusta la cantidad.`);
-  if(existing) existing.qty=wanted; else cart.push({id:p.id,size:size||"",qty:Math.max(1,Number(quantity)||1)});
+  if(existing) existing.qty=wanted; else cart.push({id:p.id,size:size||"",qty:requested});
   saveCart(); renderCart(); closeDetail(); openCart();
 }
 async function qty(id,d,size=""){
@@ -316,7 +319,17 @@ async function qty(id,d,size=""){
   }
   item.qty+=d; if(item.qty<1)cart=cart.filter(i=>cartKey(i)!==key); saveCart(); renderCart();
 }
-function removeFromCart(id,size=""){ const key=`${String(id)}::${String(size||"").toLowerCase()}`; cart=cart.filter(i=>cartKey(i)!==key); saveCart(); renderCart(); }
+function removeFromCart(id,size=""){
+  const normalizedId=String(id);
+  const normalizedSize=String(size||"").trim().toLowerCase();
+  const before=cart.length;
+  cart=cart.filter(i=>!(String(i.id)===normalizedId && String(i.size||"").trim().toLowerCase()===normalizedSize));
+  saveCart();
+  renderCart();
+  return cart.length < before;
+}
+window.qty = qty;
+window.removeFromCart = removeFromCart;
 function openCart(){ document.getElementById("cart").classList.add("open"); document.getElementById("shade").classList.add("open"); renderCart(); }
 function closeCart(){ document.getElementById("cart").classList.remove("open"); document.getElementById("shade").classList.remove("open"); }
 function renderCart(){
@@ -324,7 +337,7 @@ function renderCart(){
   cart=cart.filter(i=>products.some(p=>String(p.id)===String(i.id)));
   // Los artículos antiguos sin talla no pueden seguir en el carrito si el producto requiere talla.
   cart=cart.filter(i=>!sizesForProduct(products.find(p=>String(p.id)===String(i.id))).length || !!i.size);
-  el.innerHTML=cart.length?cart.map(i=>{const p=products.find(x=>String(x.id)===String(i.id));const available=productAvailable(p,i.size);const sizeLabel=i.size?`<br><small>Talla: <b>${esc(i.size)}</b> · ${available} disponibles</small>`:"";const disabled=i.qty>=available?"disabled":"";return `<div class="cart-line"><div class="cart-line-info"><b>${esc(p.name)}</b>${sizeLabel}<br><small>${money(p.price)} c/u</small>${i.qty>available?'<small class="stock-note stock-error">Cantidad mayor a la existencia; reduce tu pedido.</small>':''}</div><div class="cart-line-actions"><div class="qty"><button onclick="qty(${p.id},-1,${JSON.stringify(i.size||"")})" aria-label="Disminuir cantidad">−</button><b>${i.qty}</b><button onclick="qty(${p.id},1,${JSON.stringify(i.size||"")})" aria-label="Aumentar cantidad" ${disabled}>+</button></div><button class="cart-remove" onclick="removeFromCart(${p.id},${JSON.stringify(i.size||"")})" aria-label="Eliminar ${esc(p.name)} del carrito">Eliminar</button></div></div>`}).join(""):'<p class="empty">Tu carrito está vacío.</p>';
+  el.innerHTML=cart.length?cart.map(i=>{const p=products.find(x=>String(x.id)===String(i.id));const available=productAvailable(p,i.size);const sizeLabel=i.size?`<br><small>Talla: <b>${esc(i.size)}</b> · ${available} disponibles</small>`:"";const disabled=i.qty>=available?"disabled":"";return `<div class="cart-line"><div class="cart-line-info"><b>${esc(p.name)}</b>${sizeLabel}<br><small>${money(p.price)} c/u</small>${i.qty>available?'<small class="stock-note stock-error">Cantidad mayor a la existencia; reduce tu pedido.</small>':''}</div><div class="cart-line-actions"><div class="qty"><button type="button" data-cart-action="decrease" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Disminuir cantidad">−</button><b>${i.qty}</b><button type="button" data-cart-action="increase" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Aumentar cantidad" ${disabled}>+</button></div><button type="button" class="cart-remove" data-cart-action="remove" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Eliminar ${esc(p.name)} del carrito">Eliminar</button></div></div>`}).join(""):'<p class="empty">Tu carrito está vacío.</p>';
   const total=cart.reduce((s,i)=>{const p=products.find(x=>String(x.id)===String(i.id));return p?s+p.price*i.qty:s},0);
   document.getElementById("total").textContent=money(total); document.getElementById("count").textContent=cart.reduce((s,i)=>s+i.qty,0); saveCart();
 }
@@ -555,7 +568,7 @@ async function addFromDetail(){
   const p=products.find(x=>String(x.id)===String(detailId));if(!p)return;
   if(sizesForProduct(p).length&&!detailSelectedSize)return alert("Primero selecciona la talla que quieres agregar al carrito.");
   onDetailQuantityChange(document.getElementById("detailQuantity")?.value||1);
-  await add(p.id,detailSelectedSize,detailQuantity);
+  await add(p.id,detailSelectedSize,detailQuantity,true);
 }
 
 function closeDetail(){document.getElementById("detailModal").classList.add("hidden");detailId=null;}
@@ -565,6 +578,24 @@ async function startStore(){
   document.getElementById("search").oninput=renderStore;
   document.getElementById("catalogSort")?.addEventListener("change",e=>{catalogSort=e.target.value;renderStore();});
   document.getElementById("cartBtn").onclick=openCart;
+  // Delegación de eventos: garantiza que los botones del carrito sigan funcionando
+  // aunque el contenido se vuelva a dibujar después de cambiar cantidades.
+  const cartItemsEl=document.getElementById("cartItems");
+  if(cartItemsEl && !cartItemsEl.dataset.actionsBound){
+    cartItemsEl.dataset.actionsBound="true";
+    cartItemsEl.addEventListener("click", async event=>{
+      const button=event.target.closest("button[data-cart-action]");
+      if(!button || !cartItemsEl.contains(button)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const id=button.dataset.productId;
+      const size=button.dataset.size||"";
+      const action=button.dataset.cartAction;
+      if(action==="remove") removeFromCart(id,size);
+      else if(action==="decrease") await qty(id,-1,size);
+      else if(action==="increase") await qty(id,1,size);
+    });
+  }
   document.getElementById("favoritesBtn")?.addEventListener("click",openFavorites);
   document.getElementById("favoritesClose")?.addEventListener("click",closeFavorites);
   document.getElementById("close").onclick=closeCart;
