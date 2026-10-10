@@ -2000,3 +2000,11 @@
   .detail-description:not(.expanded){display:none}
   .detail-description{margin-top:0}
 }
+
+
+/* Tarjetas completas clicables: abre la misma ficha que "Ver producto". */
+.product-card-clickable { cursor: pointer; }
+.product-card-clickable:focus-visible { outline: 2px solid #222; outline-offset: 3px; }
+.product-card-clickable .product-heart,
+.product-card-clickable .product-actions button,
+.product-card-clickable .catalog-add { cursor: pointer; }
