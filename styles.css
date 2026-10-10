@@ -2009,3 +2009,39 @@
 .product-card-clickable .product-heart,
 .product-card-clickable .product-actions button,
 .product-card-clickable .catalog-add { cursor: pointer; }
+
+
+/* Ajuste solicitado: etiqueta OFERTA a la izquierda y Favoritos a la derecha,
+   tanto en el catálogo como en la sección de ofertas. */
+.catalog-grid .catalog-product-card .offer-badge,
+.offer-grid .offer-product-card .offer-badge,
+#ofertas .offer-grid .offer-product-card .offer-badge,
+#ofertas #offerProducts .offer-product-card .offer-badge {
+  left: 12px !important;
+  right: auto !important;
+  top: 12px !important;
+  z-index: 2;
+}
+.catalog-grid .catalog-product-card .product-heart,
+.offer-grid .offer-product-card .product-heart {
+  left: auto !important;
+  right: 12px !important;
+  top: 12px !important;
+  z-index: 3;
+}
+@media (max-width: 700px) {
+  .catalog-grid .catalog-product-card .offer-badge,
+  .offer-grid .offer-product-card .offer-badge,
+  #ofertas .offer-grid .offer-product-card .offer-badge,
+  #ofertas #offerProducts .offer-product-card .offer-badge {
+    left: 7px !important;
+    right: auto !important;
+    top: 7px !important;
+  }
+  .catalog-grid .catalog-product-card .product-heart,
+  .offer-grid .offer-product-card .product-heart {
+    right: 7px !important;
+    left: auto !important;
+    top: 7px !important;
+  }
+}
