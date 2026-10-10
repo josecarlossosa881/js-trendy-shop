@@ -2213,49 +2213,160 @@
   }
 }
 
-/* Corrección exclusiva para Favoritos en celular: mantener visible el encabezado y el botón de cierre. */
-@media (max-width: 600px) {
+
+/* Carrito: vista previa de cada producto agregado */
+.cart-line {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 13px;
+  row-gap: 10px;
+}
+.cart-line-image {
+  width: 82px;
+  height: 82px;
+  border: 1px solid #eee9e5;
+  border-radius: 6px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  grid-row: span 2;
+}
+.cart-line-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+.cart-line-image span { color: #777; font-size: 10px; text-align: center; padding: 4px; }
+.cart-line-info { min-width: 0; overflow-wrap: anywhere; }
+.cart-line-info > b { display: block; line-height: 1.35; margin-bottom: 4px; }
+.cart-line-actions { grid-column: 2; justify-content: flex-start; gap: 8px; }
+@media (max-width: 500px) {
+  .cart { padding: 18px 14px; }
+  .cart-line { grid-template-columns: 70px minmax(0, 1fr); column-gap: 10px; }
+  .cart-line-image { width: 70px; height: 70px; }
+  .cart-line-actions { flex-wrap: wrap; }
+}
+
+
+/* ===== FAVORITOS MÓVIL — diseño limpio y botón de cierre siempre visible ===== */
+@media (max-width: 850px) {
   .favorites-panel {
+    position: fixed !important;
+    top: 0 !important;
+    right: -100vw !important;
+    width: min(92vw, 440px) !important;
+    max-width: 440px !important;
     height: 100vh !important;
     height: 100dvh !important;
-    padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)) !important;
-    overflow: hidden !important;
+    padding: 0 !important;
+    z-index: 10001 !important;
     display: flex !important;
     flex-direction: column !important;
+    overflow: hidden !important;
+    background: #fff !important;
+    box-shadow: -12px 0 35px rgba(0,0,0,.12) !important;
+    transition: right .25s ease !important;
   }
+
+  .favorites-panel.open {
+    right: 0 !important;
+  }
+
   .favorites-panel .cart-head {
     position: relative !important;
-    top: auto !important;
-    z-index: 5 !important;
     flex: 0 0 auto !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 12px !important;
+    gap: 14px !important;
+    min-height: 112px !important;
+    padding: 24px 22px 18px !important;
     background: #fff !important;
-    padding: 8px 0 14px !important;
-    border-bottom: 1px solid #eee !important;
+    border-bottom: 1px solid #e9e6e2 !important;
+    z-index: 2 !important;
   }
-  .favorites-panel .cart-head .x {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+
+  .favorites-panel .cart-head h2 {
+    font: 500 clamp(32px, 8vw, 40px)/1 Georgia, serif !important;
+    color: #181818 !important;
+    margin: 0 !important;
+  }
+
+  .favorites-panel .cart-head .x,
+  .favorites-panel #favoritesClose {
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 44px !important;
     width: 44px !important;
     height: 44px !important;
-    min-width: 44px !important;
-    flex: 0 0 44px !important;
-    font-size: 34px !important;
-    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
     border-radius: 50% !important;
-    background: #f3f3f3 !important;
+    background: #f3f2f0 !important;
     color: #181818 !important;
+    font: 400 30px/1 Arial, sans-serif !important;
     cursor: pointer !important;
-    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent;
   }
+
   .favorites-panel .cart-items {
     flex: 1 1 auto !important;
     min-height: 0 !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding: 18px 20px 24px !important;
+  }
+
+  .favorites-panel .empty {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 15px !important;
+    min-height: 250px !important;
+    padding: 30px 18px !important;
+    border: 1px dashed #d6d3cf !important;
+    border-radius: 4px !important;
+    background: #fff !important;
+    color: #747474 !important;
+    text-align: center !important;
+    font-size: 18px !important;
+    line-height: 1.45 !important;
+  }
+
+  .favorites-panel > small,
+  .favorites-panel .favorites-note {
+    position: relative !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid #e9e6e2 !important;
+    background: #faf9f8 !important;
+    color: #777 !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+}
+
+@media (max-width: 500px) {
+  .favorites-panel .cart-head {
+    min-height: 100px !important;
+    padding: 20px 18px 15px !important;
+  }
+
+  .favorites-panel .cart-items {
+    padding: 16px 16px 22px !important;
+  }
+
+  .favorites-panel .empty {
+    min-height: 230px !important;
+    font-size: 17px !important;
   }
 }
