@@ -611,6 +611,17 @@ function openProductImage(src,name){
 function closeDetail(){document.getElementById("detailModal").classList.add("hidden");detailId=null;}
 
 async function startStore(){
+  // Orden solicitado en la barra: Inicio, Categorías, Catálogo, Ofertas.
+  // Movemos los enlaces reales (no solo visualmente) para conservar sus destinos y estados activos.
+  const mainNav = document.querySelector('.nav nav');
+  if (mainNav) {
+    const categoriesLink = mainNav.querySelector('a[href="#categorias"]');
+    const catalogLink = mainNav.querySelector('a[href="#catalogo"]');
+    if (categoriesLink && catalogLink && categoriesLink.compareDocumentPosition(catalogLink) & Node.DOCUMENT_POSITION_FOLLOWING) {
+      mainNav.insertBefore(categoriesLink, catalogLink);
+    }
+  }
+
   if(!document.getElementById("products"))return;
   document.getElementById("search").oninput=renderStore;
   document.getElementById("catalogSort")?.addEventListener("change",e=>{catalogSort=e.target.value;renderStore();});
@@ -728,79 +739,3 @@ async function startStore(){
   renderStore();
 }
 startStore();
-
-
-/* Navegación superior: orden consistente y sección activa por desplazamiento */
-(function setupSectionAwareNavigation(){
-  const setup = () => {
-    const nav = document.querySelector(".nav nav");
-    if (!nav) return;
-    const links = Array.from(nav.querySelectorAll("a"));
-    if (!links.length) return;
-
-    const order = ["inicio", "categorías", "catalogo", "ofertas"];
-    const normalized = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    links.sort((a,b) => {
-      const ai = order.indexOf(normalized(a.textContent).replace(/\s+/g,""));
-      const bi = order.indexOf(normalized(b.textContent).replace(/\s+/g,""));
-      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
-    }).forEach(link => nav.appendChild(link));
-
-    const sections = [
-      {key:"inicio", el:document.querySelector("#inicio, #hero, .hero, [data-section='inicio']")},
-      {key:"categorias", el:document.getElementById("categorias")},
-      {key:"catalogo", el:document.getElementById("catalogo")},
-      {key:"ofertas", el:document.getElementById("ofertas")}
-    ].filter(item => item.el);
-
-    const findLinkKey = link => {
-      const label = normalized(link.textContent).replace(/\s+/g,"");
-      if (label.includes("inicio")) return "inicio";
-      if (label.includes("categor")) return "categorias";
-      if (label.includes("catalog")) return "catalogo";
-      if (label.includes("oferta")) return "ofertas";
-      return "";
-    };
-
-    const setActive = key => {
-      links.forEach(link => {
-        const active = findLinkKey(link) === key;
-        link.classList.toggle("active", active);
-        if (active) link.setAttribute("aria-current","page");
-        else link.removeAttribute("aria-current");
-      });
-    };
-
-    links.forEach(link => {
-      link.addEventListener("click", () => {
-        const key = findLinkKey(link);
-        if (key) setActive(key);
-      });
-    });
-
-    let ticking = false;
-    const updateFromScroll = () => {
-      ticking = false;
-      if (!sections.length) return;
-      const navHeight = document.querySelector(".nav")?.getBoundingClientRect().height || 100;
-      const threshold = Math.max(110, Math.min(navHeight + 35, 190));
-      let current = sections[0].key;
-      for (const section of sections) {
-        if (section.el.getBoundingClientRect().top <= threshold) current = section.key;
-      }
-      setActive(current);
-    };
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(updateFromScroll);
-    };
-    window.addEventListener("scroll", onScroll, {passive:true});
-    window.addEventListener("resize", onScroll);
-    updateFromScroll();
-    setTimeout(updateFromScroll, 250);
-  };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup, {once:true});
-  else setup();
-})();
-
