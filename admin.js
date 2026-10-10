@@ -608,7 +608,7 @@ function inventoryProductMarkup(p, archived=false){
   return `<div class="admin-item inventory-row">
     <div class="pic" style="width:65px;height:65px;flex:0 0 65px">${renderImage(p.image,p.name)}</div>
     <div class="grow"><b>${p.name}</b><br><small>${p.brand ? p.brand+" · " : ""}${p.category || "Sin categoría"}${p.model ? " · "+p.model : ""}</small><br><small>Tallas: ${sizeText}</small><br><small><b>Existencia: ${status}</b></small></div>
-    ${archived ? `<button onclick="restoreProduct(${p.id})">Recuperar</button>` : `<button onclick="changeProductStock(${p.id},'entrada')">+ Entrada</button><button onclick="changeProductStock(${p.id},'ajuste')">Ajustar</button><button onclick="deleteProduct(${p.id})">Archivar</button>`}
+    ${archived ? `<button onclick="restoreProduct(${p.id})">Recuperar</button><button class="danger" onclick="permanentlyDeleteProduct(${p.id})">Eliminar</button>` : `<button onclick="changeProductStock(${p.id},'entrada')">+ Entrada</button><button onclick="changeProductStock(${p.id},'ajuste')">Ajustar</button><button onclick="deleteProduct(${p.id})">Archivar</button>`}
   </div>`;
 }
 
@@ -629,15 +629,37 @@ async function renderSizeInventory(){
   for(const p of products) await ensureSizeRows(p);
   const {data,error}=await supabaseClient.from("inventario_tallas").select("id,producto_id,talla,stock,vendidas").order("producto_id").order("talla");
   if(error)throw error;
-  const rows=(data||[]).map(r=>({...r,product:products.find(p=>String(p.id)===String(r.producto_id))})).filter(r=>r.product).filter(r=>[r.product.name,r.product.brand,r.product.category,r.product.model,r.product.talla,r.talla].join(" ").toLowerCase().includes(query));
+  const rows=(data||[]).map(r=>({...r,product:products.find(p=>String(p.id)===String(r.producto_id))})).filter(r=>r.product).filter(r=>String(r.product.talla||"").split(/[,/|]+/).map(x=>x.trim().toLowerCase()).includes(String(r.talla||"").trim().toLowerCase())).filter(r=>[r.product.name,r.product.brand,r.product.category,r.product.model,r.product.talla,r.talla].join(" ").toLowerCase().includes(query));
   if(!rows.length){wrap.innerHTML='<div class="empty" style="padding:22px">No hay tallas que coincidan con la búsqueda. Revisa que el producto tenga tallas registradas.</div>';return;}
   wrap.innerHTML=`<table class="size-inventory-table"><thead><tr><th>Imagen</th><th>Producto</th><th>Talla</th><th>Stock</th><th>Vendidas</th><th>Acciones</th></tr></thead><tbody>${rows.map(r=>{
     const p=r.product;
     const photo=p.image?`<img src="${p.image}" alt="Imagen de ${p.name}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\'inventory-empty-photo\'>Sin foto</span>'">`:'<span class="inventory-empty-photo">Sin foto</span>';
-    return `<tr><td><div class="size-inventory-photo">${photo}</div></td><td><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td><b>${r.talla}</b></td><td><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td>${Number(r.vendidas)||0}</td><td><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button onclick="sizeStockAction(${r.id},'correccion')">Corregir ventas</button><button class="archive-size-btn" onclick="deleteProduct(${p.id})">Archivar</button></div></td></tr>`;
+    return `<tr><td><div class="size-inventory-photo">${photo}</div></td><td><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td><b>${r.talla}</b></td><td><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td>${Number(r.vendidas)||0}</td><td><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button onclick="sizeStockAction(${r.id},'correccion')">Corregir ventas</button><button class="archive-size-btn" onclick="archiveProductSize(${r.id},${p.id})">Archivar talla</button></div></td></tr>`;
   }).join('')}</tbody></table>`;
  }catch(e){wrap.innerHTML=`<div class="empty" style="padding:20px">No se pudo cargar inventario por talla. Ejecuta inventario_tallas.sql en Supabase. ${e.message}</div>`;}
 }
+async function archiveProductSize(sizeRowId, productId){
+  try{
+    const {data:row,error:rowError}=await supabaseClient.from("inventario_tallas").select("id,producto_id,talla,stock,vendidas").eq("id",sizeRowId).single();
+    if(rowError) throw rowError;
+    const {data:product,error:productError}=await supabaseClient.from("productos").select("id,nombre,talla,stock").eq("id",productId).single();
+    if(productError) throw productError;
+    if(String(row.producto_id)!==String(product.id)) throw new Error("La talla seleccionada no corresponde a este producto.");
+    const sizes=String(product.talla||"").split(/[,/|]+/).map(x=>x.trim()).filter(Boolean);
+    const remaining=sizes.filter(size=>size.toLocaleLowerCase()!==String(row.talla||"").trim().toLocaleLowerCase());
+    if(remaining.length===sizes.length) throw new Error("No se encontró esa talla en el producto. Actualiza el inventario y vuelve a intentarlo.");
+    if(!confirm(`¿Archivar únicamente la talla ${row.talla} de “${product.nombre}”?\n\nEsta talla dejará de mostrarse en el catálogo. Las demás tallas y sus existencias no cambiarán.`)) return;
+    const {error:updateError}=await supabaseClient.from("productos").update({talla:remaining.join(", ")}).eq("id",productId);
+    if(updateError) throw updateError;
+    const {error:logError}=await supabaseClient.from("inventario_movimientos").insert({producto_id:productId,producto_nombre:(product.nombre||"Producto")+" · talla "+row.talla,tipo:"archivo_talla",cantidad:0,stock_anterior:Number(row.stock)||0,stock_nuevo:Number(row.stock)||0,motivo:"Talla archivada individualmente desde inventario"});
+    if(logError) console.warn("No se pudo registrar el archivo de talla:",logError.message);
+    await renderSizeInventory();
+    await renderInventoryHistory();
+    await renderAdmin();
+    alert(`Se archivó únicamente la talla ${row.talla}. Las demás tallas siguen disponibles.`);
+  }catch(error){console.error(error);alert("No se pudo archivar la talla: "+error.message);}
+}
+
 async function sizeStockAction(id,action){
  try{
   const {data:r,error}=await supabaseClient.from('inventario_tallas').select('*,productos(nombre)').eq('id',id).single();if(error)throw error;
@@ -726,6 +748,27 @@ async function changeProductStock(id,type){
     await renderInventory();
     await renderArchived();
   }catch(error){ console.error(error); alert("No se pudo actualizar la existencia: "+error.message); }
+}
+
+async function permanentlyDeleteProduct(id){
+  try{
+    const product=(await getProducts()).find(p=>String(p.id)===String(id));
+    if(!product) throw new Error("No se encontró el producto archivado.");
+    const typedName=product.name||"este producto";
+    if(!confirm(`¿Eliminar DEFINITIVAMENTE “${typedName}”?\n\nEsta acción no se puede deshacer. Se eliminará el producto archivado y sus registros de inventario por talla. El historial de movimientos se conservará.`)) return;
+    // Elimina primero las filas de inventario por talla asociadas al producto.
+    const {error:sizeError}=await supabaseClient.from("inventario_tallas").delete().eq("producto_id",id);
+    if(sizeError) throw new Error("No se pudieron eliminar sus registros de tallas: "+sizeError.message);
+    const {error:productError}=await supabaseClient.from("productos").delete().eq("id",id).eq("activo",false);
+    if(productError) throw new Error("No se pudo eliminar el producto: "+productError.message);
+    await renderAdmin();
+    await renderInventory();
+    await renderArchived();
+    alert("Producto eliminado definitivamente. El historial de movimientos se conservó.");
+  }catch(error){
+    console.error(error);
+    alert("No se pudo eliminar el producto: "+error.message);
+  }
 }
 
 async function restoreProduct(id){
