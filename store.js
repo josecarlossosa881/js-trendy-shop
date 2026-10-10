@@ -521,8 +521,24 @@ async function openDetail(id){
   if(sizes.length) await refreshSizeInventory();
   const available=sizes.length?Math.max(0,sizes.reduce((sum,size)=>sum+sizeStockFor(p.id,size),0)):Math.max(0,Number(p.stock)||0);
   const sizeControls=sizes.length?`<div class="detail-sizes"><b>Selecciona talla</b><div id="detailSizeButtons" class="detail-size-buttons" role="group" aria-label="Seleccionar talla">${sizes.map(s=>{const stock=sizeStockFor(p.id,s);return `<button type="button" class="detail-size-button" data-size="${esc(s)}" aria-pressed="false" ${stock<=0?'disabled':''}><strong>${esc(s)}</strong><span>${stock} ${stock===1?'disponible':'disponibles'}</span></button>`}).join('')}</div><p id="detailSizeStock" class="stock-note">Selecciona una talla para consultar las piezas disponibles.</p></div>`:'';
-  const description=p.desc?`<p>${esc(p.desc)}</p>`:'';
-  document.getElementById("detailContent").innerHTML=`<div class="detail-image">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Sin imagen'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}${description}${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad" ${available<=1?'disabled':''}>−</button><input id="detailQuantity" type="number" min="1" max="${available}" value="1" onchange="onDetailQuantityChange(this.value)"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad" ${available<=1?'disabled':''}>+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?'Elige una talla para agregar al carrito':(available>0?`${available} disponibles`:'Actualmente agotado')}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${available<=0?'disabled':''}>Agregar al carrito</button></div>`;
+  const description=p.desc?`<div class="detail-description-wrap"><h3 class="detail-description-title">Descripción</h3><button type="button" id="detailDescriptionToggle" class="detail-description-toggle" aria-expanded="false" aria-controls="detailDescription">Ver descripción <span aria-hidden="true">＋</span></button><p id="detailDescription" class="detail-description">${esc(p.desc)}</p></div>`:'';
+  document.getElementById("detailContent").innerHTML=`<div class="detail-image">${p.image?`<button type="button" class="detail-image-open" aria-label="Ver imagen completa de ${esc(p.name)}"><img src="${esc(p.image)}" alt="${esc(p.name)}"><span class="detail-image-hint">Toca la imagen para verla completa</span></button>`:'Sin imagen'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}${description}${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad" ${available<=1?'disabled':''}>−</button><input id="detailQuantity" type="number" min="1" max="${available}" value="1" onchange="onDetailQuantityChange(this.value)"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad" ${available<=1?'disabled':''}>+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?'Elige una talla para agregar al carrito':(available>0?`${available} disponibles`:'Actualmente agotado')}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${available<=0?'disabled':''}>Agregar al carrito</button></div>`;
+  // En móvil, permite abrir la foto en un visor de pantalla completa sin recortarla.
+  const detailImageButton=document.querySelector(".detail-image-open");
+  if(detailImageButton){
+    detailImageButton.addEventListener("click",()=>openProductImage(p.image,p.name));
+  }
+  // En móvil la descripción se muestra bajo demanda; en escritorio permanece visible.
+  const descriptionToggle=document.getElementById("detailDescriptionToggle");
+  const descriptionText=document.getElementById("detailDescription");
+  if(descriptionToggle && descriptionText){
+    descriptionToggle.addEventListener("click",()=>{
+      const expanded=descriptionToggle.getAttribute("aria-expanded")==="true";
+      descriptionToggle.setAttribute("aria-expanded",expanded?"false":"true");
+      descriptionText.classList.toggle("expanded",!expanded);
+      descriptionToggle.innerHTML=expanded?'Ver descripción <span aria-hidden="true">＋</span>':'Ocultar descripción <span aria-hidden="true">−</span>';
+    });
+  }
   // Conectar cada botón con un listener real después de renderizar el modal.
   document.querySelectorAll("#detailSizeButtons .detail-size-button").forEach(button=>{
     button.addEventListener("click",()=>onDetailSizeChange(button.dataset.size));
@@ -571,6 +587,21 @@ async function addFromDetail(){
   await add(p.id,detailSelectedSize,detailQuantity,true);
 }
 
+function openProductImage(src,name){
+  if(!src)return;
+  let viewer=document.getElementById("productImageViewer");
+  if(!viewer){
+    viewer=document.createElement("div");
+    viewer.id="productImageViewer";
+    viewer.className="product-image-viewer hidden";
+    viewer.innerHTML='<button type="button" class="product-image-viewer-close" aria-label="Cerrar imagen">×</button><img alt="">';
+    document.body.appendChild(viewer);
+    viewer.addEventListener("click",event=>{if(event.target===viewer||event.target.closest(".product-image-viewer-close"))viewer.classList.add("hidden");});
+    document.addEventListener("keydown",event=>{if(event.key==="Escape")viewer.classList.add("hidden");});
+  }
+  const img=viewer.querySelector("img");img.src=src;img.alt=name||"Imagen completa del producto";
+  viewer.classList.remove("hidden");
+}
 function closeDetail(){document.getElementById("detailModal").classList.add("hidden");detailId=null;}
 
 async function startStore(){
