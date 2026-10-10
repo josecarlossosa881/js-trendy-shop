@@ -255,7 +255,14 @@ function toggleFavorite(id){
   else favorites.push(key);
   saveFavorites(); updateFavoriteCount(); renderFavorites(); renderStore();
 }
-function openFavorites(){ const panel=document.getElementById("favorites"); if(!panel)return; renderFavorites(); panel.classList.add("open"); document.getElementById("shade")?.classList.add("open"); }
+function openFavorites(){
+  const panel=document.getElementById("favorites");
+  if(!panel) return;
+  if(panel.classList.contains("open")) { closeFavorites(); return; }
+  renderFavorites();
+  panel.classList.add("open");
+  document.getElementById("shade")?.classList.add("open");
+}
 function closeFavorites(){ document.getElementById("favorites")?.classList.remove("open"); if(!document.getElementById("cart")?.classList.contains("open")) document.getElementById("shade")?.classList.remove("open"); }
 function renderFavorites(){
   favorites=favorites.filter(id=>products.some(p=>String(p.id)===String(id))); saveFavorites(); updateFavoriteCount();
@@ -337,7 +344,7 @@ function renderCart(){
   cart=cart.filter(i=>products.some(p=>String(p.id)===String(i.id)));
   // Los artículos antiguos sin talla no pueden seguir en el carrito si el producto requiere talla.
   cart=cart.filter(i=>!sizesForProduct(products.find(p=>String(p.id)===String(i.id))).length || !!i.size);
-  el.innerHTML=cart.length?cart.map(i=>{const p=products.find(x=>String(x.id)===String(i.id));const available=productAvailable(p,i.size);const sizeLabel=i.size?`<br><small>Talla: <b>${esc(i.size)}</b> · ${available} disponibles</small>`:"";const disabled=i.qty>=available?"disabled":"";return `<div class="cart-line"><div class="cart-line-info"><b>${esc(p.name)}</b>${sizeLabel}<br><small>${money(p.price)} c/u</small>${i.qty>available?'<small class="stock-note stock-error">Cantidad mayor a la existencia; reduce tu pedido.</small>':''}</div><div class="cart-line-actions"><div class="qty"><button type="button" data-cart-action="decrease" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Disminuir cantidad">−</button><b>${i.qty}</b><button type="button" data-cart-action="increase" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Aumentar cantidad" ${disabled}>+</button></div><button type="button" class="cart-remove" data-cart-action="remove" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Eliminar ${esc(p.name)} del carrito">Eliminar</button></div></div>`}).join(""):'<p class="empty">Tu carrito está vacío.</p>';
+  el.innerHTML=cart.length?cart.map(i=>{const p=products.find(x=>String(x.id)===String(i.id));const available=productAvailable(p,i.size);const sizeLabel=i.size?`<br><small>Talla: <b>${esc(i.size)}</b> · ${available} disponibles</small>`:"";const disabled=i.qty>=available?"disabled":"";return `<div class="cart-line"><div class="cart-line-image">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">`:'<span>Sin foto</span>'}</div><div class="cart-line-info"><b>${esc(p.name)}</b>${sizeLabel}<br><small>${money(p.price)} c/u</small>${i.qty>available?'<small class="stock-note stock-error">Cantidad mayor a la existencia; reduce tu pedido.</small>':''}</div><div class="cart-line-actions"><div class="qty"><button type="button" data-cart-action="decrease" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Disminuir cantidad">−</button><b>${i.qty}</b><button type="button" data-cart-action="increase" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Aumentar cantidad" ${disabled}>+</button></div><button type="button" class="cart-remove" data-cart-action="remove" data-product-id="${esc(p.id)}" data-size="${esc(i.size||"")}" aria-label="Eliminar ${esc(p.name)} del carrito">Eliminar</button></div></div>`}).join(""):'<p class="empty">Tu carrito está vacío.</p>';
   const total=cart.reduce((s,i)=>{const p=products.find(x=>String(x.id)===String(i.id));return p?s+p.price*i.qty:s},0);
   document.getElementById("total").textContent=money(total); document.getElementById("count").textContent=cart.reduce((s,i)=>s+i.qty,0); saveCart();
 }
@@ -622,10 +629,7 @@ function setupSectionNavigation(){
     .filter(item => item.section);
   if(!sections.length) return;
 
-  let currentId = '';
   const setActive = (id) => {
-    if(!id || id === currentId) return;
-    currentId = id;
     sections.forEach(({link, section}) => {
       const active = section.id === id;
       link.classList.toggle('active', active);
@@ -634,47 +638,39 @@ function setupSectionNavigation(){
     });
   };
 
-  const updateActiveFromScroll = () => {
-    const header = document.querySelector('.nav');
-    const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
-    // La sección activa es la última que ya alcanzó la franja visible justo
-    // debajo del menú fijo. Es estable en móvil y escritorio y no depende
-    // de qué entradas aisladas entregue IntersectionObserver.
-    const activationLine = headerBottom + 55;
-    let current = sections[0];
-    for(const item of sections){
-      if(item.section.getBoundingClientRect().top <= activationLine) current = item;
-      else break;
-    }
-    // Al llegar al final de la página, Ofertas/Footer se considera la sección final.
-    if(window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8){
-      const offers = sections.find(item => item.section.id === 'ofertas');
-      if(offers) current = offers;
-    }
-    setActive(current.section.id);
-  };
-
+  // Al tocar una opción, el indicador cambia inmediatamente; el observador
+  // lo mantiene sincronizado al desplazarse manualmente por la página.
   links.forEach(link => link.addEventListener('click', () => {
     const id = link.getAttribute('href').slice(1);
     if(sections.some(item => item.section.id === id)) setActive(id);
-    // Recalcular después del desplazamiento nativo del enlace.
-    requestAnimationFrame(updateActiveFromScroll);
-    setTimeout(updateActiveFromScroll, 350);
   }));
 
-  let ticking = false;
-  const onScroll = () => {
-    if(ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      updateActiveFromScroll();
-      ticking = false;
+  if('IntersectionObserver' in window){
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a,b) => b.intersectionRatio - a.intersectionRatio);
+      if(visible.length) setActive(visible[0].target.id);
+    }, {
+      root: null,
+      // Se considera la zona visible debajo de la barra fija.
+      rootMargin: '-100px 0px -55% 0px',
+      threshold: [0, 0.1, 0.25, 0.5, 0.75]
     });
-  };
-  window.addEventListener('scroll', onScroll, {passive:true});
-  window.addEventListener('resize', updateActiveFromScroll);
-  window.addEventListener('hashchange', updateActiveFromScroll);
-  updateActiveFromScroll();
+    sections.forEach(({section}) => observer.observe(section));
+  } else {
+    const update = () => {
+      const headerHeight = document.querySelector('.nav')?.getBoundingClientRect().height || 0;
+      let current = sections[0].section.id;
+      sections.forEach(({section}) => {
+        if(section.getBoundingClientRect().top <= headerHeight + 120) current = section.id;
+      });
+      setActive(current);
+    };
+    window.addEventListener('scroll', update, {passive:true});
+    window.addEventListener('resize', update);
+    update();
+  }
 }
 
 async function startStore(){
@@ -735,6 +731,13 @@ async function startStore(){
   }
   document.getElementById("favoritesBtn")?.addEventListener("click",openFavorites);
   document.getElementById("favoritesClose")?.addEventListener("click",closeFavorites);
+  document.addEventListener("keydown", event => {
+    if(event.key === "Escape") {
+      closeFavorites();
+      closeCart();
+      closeDetail();
+    }
+  });
   document.getElementById("close").onclick=closeCart;
   document.getElementById("shade").onclick=()=>{ closeCart(); closeFavorites(); };
   document.getElementById("send").onclick=sendOrder;
