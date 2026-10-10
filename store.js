@@ -727,52 +727,80 @@ async function startStore(){
   await loadVisualCatalogConfig();
   renderStore();
 }
-
-// Navegación activa: la línea negra sigue la sección que el cliente está viendo.
-function setupActiveNavigation(){
-  const nav=document.querySelector('.nav');
-  const links=[...(nav?.querySelectorAll('nav a[href^="#"]')||[])];
-  if(!links.length) return;
-  const entries=links.map(link=>{
-    const href=link.getAttribute('href');
-    let target=null;
-    try { target=document.querySelector(href); } catch(_) {}
-    const label=(link.textContent||'').trim().toLowerCase();
-    if(!target && label.includes('categor')) target=document.getElementById('cats')?.closest('.showcase-section') || document.getElementById('cats');
-    if(!target && label.includes('inicio')) target=document.querySelector('#inicio, .home-hero, .hero');
-    if(!target && label.includes('catálogo')) target=document.getElementById('catalogo');
-    if(!target && label.includes('oferta')) target=document.getElementById('ofertas') || document.querySelector('.offers-section');
-    return {link,target,label};
-  }).filter(x=>x.target);
-  if(!entries.length) return;
-  const activate=(entry)=>{
-    links.forEach(link=>{
-      const on=link===entry.link;
-      link.classList.toggle('active',on);
-      if(on) link.setAttribute('aria-current','location'); else link.removeAttribute('aria-current');
-    });
-  };
-  let ticking=false;
-  const update=()=>{
-    ticking=false;
-    const headerHeight=nav.getBoundingClientRect().height||80;
-    const probe=window.scrollY+headerHeight+Math.min(130,window.innerHeight*.22);
-    let current=entries[0];
-    for(const entry of entries){
-      if(entry.target.getBoundingClientRect().top+window.scrollY<=probe) current=entry;
-    }
-    activate(current);
-  };
-  window.addEventListener('scroll',()=>{if(!ticking){ticking=true;requestAnimationFrame(update);}}, {passive:true});
-  window.addEventListener('resize',update,{passive:true});
-  links.forEach(entryLink=>entryLink.addEventListener('click',()=>{
-    const entry=entries.find(x=>x.link===entryLink);
-    if(entry) activate(entry);
-    setTimeout(update,350);
-  }));
-  update();
-}
-
 startStore();
-window.addEventListener("load", setupActiveNavigation, {once:true});
-if(document.readyState!=="loading") setupActiveNavigation();
+
+
+/* Navegación superior: orden consistente y sección activa por desplazamiento */
+(function setupSectionAwareNavigation(){
+  const setup = () => {
+    const nav = document.querySelector(".nav nav");
+    if (!nav) return;
+    const links = Array.from(nav.querySelectorAll("a"));
+    if (!links.length) return;
+
+    const order = ["inicio", "categorías", "catalogo", "ofertas"];
+    const normalized = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    links.sort((a,b) => {
+      const ai = order.indexOf(normalized(a.textContent).replace(/\s+/g,""));
+      const bi = order.indexOf(normalized(b.textContent).replace(/\s+/g,""));
+      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    }).forEach(link => nav.appendChild(link));
+
+    const sections = [
+      {key:"inicio", el:document.querySelector("#inicio, #hero, .hero, [data-section='inicio']")},
+      {key:"categorias", el:document.getElementById("categorias")},
+      {key:"catalogo", el:document.getElementById("catalogo")},
+      {key:"ofertas", el:document.getElementById("ofertas")}
+    ].filter(item => item.el);
+
+    const findLinkKey = link => {
+      const label = normalized(link.textContent).replace(/\s+/g,"");
+      if (label.includes("inicio")) return "inicio";
+      if (label.includes("categor")) return "categorias";
+      if (label.includes("catalog")) return "catalogo";
+      if (label.includes("oferta")) return "ofertas";
+      return "";
+    };
+
+    const setActive = key => {
+      links.forEach(link => {
+        const active = findLinkKey(link) === key;
+        link.classList.toggle("active", active);
+        if (active) link.setAttribute("aria-current","page");
+        else link.removeAttribute("aria-current");
+      });
+    };
+
+    links.forEach(link => {
+      link.addEventListener("click", () => {
+        const key = findLinkKey(link);
+        if (key) setActive(key);
+      });
+    });
+
+    let ticking = false;
+    const updateFromScroll = () => {
+      ticking = false;
+      if (!sections.length) return;
+      const navHeight = document.querySelector(".nav")?.getBoundingClientRect().height || 100;
+      const threshold = Math.max(110, Math.min(navHeight + 35, 190));
+      let current = sections[0].key;
+      for (const section of sections) {
+        if (section.el.getBoundingClientRect().top <= threshold) current = section.key;
+      }
+      setActive(current);
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateFromScroll);
+    };
+    window.addEventListener("scroll", onScroll, {passive:true});
+    window.addEventListener("resize", onScroll);
+    updateFromScroll();
+    setTimeout(updateFromScroll, 250);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup, {once:true});
+  else setup();
+})();
+
