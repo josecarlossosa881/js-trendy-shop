@@ -727,4 +727,52 @@ async function startStore(){
   await loadVisualCatalogConfig();
   renderStore();
 }
+
+// Navegación activa: la línea negra sigue la sección que el cliente está viendo.
+function setupActiveNavigation(){
+  const nav=document.querySelector('.nav');
+  const links=[...(nav?.querySelectorAll('nav a[href^="#"]')||[])];
+  if(!links.length) return;
+  const entries=links.map(link=>{
+    const href=link.getAttribute('href');
+    let target=null;
+    try { target=document.querySelector(href); } catch(_) {}
+    const label=(link.textContent||'').trim().toLowerCase();
+    if(!target && label.includes('categor')) target=document.getElementById('cats')?.closest('.showcase-section') || document.getElementById('cats');
+    if(!target && label.includes('inicio')) target=document.querySelector('#inicio, .home-hero, .hero');
+    if(!target && label.includes('catálogo')) target=document.getElementById('catalogo');
+    if(!target && label.includes('oferta')) target=document.getElementById('ofertas') || document.querySelector('.offers-section');
+    return {link,target,label};
+  }).filter(x=>x.target);
+  if(!entries.length) return;
+  const activate=(entry)=>{
+    links.forEach(link=>{
+      const on=link===entry.link;
+      link.classList.toggle('active',on);
+      if(on) link.setAttribute('aria-current','location'); else link.removeAttribute('aria-current');
+    });
+  };
+  let ticking=false;
+  const update=()=>{
+    ticking=false;
+    const headerHeight=nav.getBoundingClientRect().height||80;
+    const probe=window.scrollY+headerHeight+Math.min(130,window.innerHeight*.22);
+    let current=entries[0];
+    for(const entry of entries){
+      if(entry.target.getBoundingClientRect().top+window.scrollY<=probe) current=entry;
+    }
+    activate(current);
+  };
+  window.addEventListener('scroll',()=>{if(!ticking){ticking=true;requestAnimationFrame(update);}}, {passive:true});
+  window.addEventListener('resize',update,{passive:true});
+  links.forEach(entryLink=>entryLink.addEventListener('click',()=>{
+    const entry=entries.find(x=>x.link===entryLink);
+    if(entry) activate(entry);
+    setTimeout(update,350);
+  }));
+  update();
+}
+
 startStore();
+window.addEventListener("load", setupActiveNavigation, {once:true});
+if(document.readyState!=="loading") setupActiveNavigation();
