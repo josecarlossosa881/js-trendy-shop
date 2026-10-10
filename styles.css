@@ -2138,3 +2138,15 @@
   }
 }
 
+/* ===== BARRA SUPERIOR FIJA AL DESPLAZARSE (PC Y CELULAR) ===== */
+.nav {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  width: 100% !important;
+  background: rgba(255, 255, 255, .98) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  isolation: isolate;
+}
+
