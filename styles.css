@@ -1461,8 +1461,9 @@
     min-width: 0 !important;
   }
 
-  body:not(.mobile-catalog-open) #products > :nth-child(n+5) {
-    display: none !important;
+  /* En móvil se muestra todo el catálogo; no ocultar productos después del cuarto. */
+  body:not(.mobile-catalog-open) #products > * {
+    display: block !important;
   }
 
   body.mobile-catalog-open .mobile-view-all {
