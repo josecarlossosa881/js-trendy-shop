@@ -459,7 +459,7 @@ function renderStore(){
   if(count) count.textContent=`${visible.length} ${visible.length===1?'producto':'productos'}`;
   document.getElementById("products").innerHTML=visible.map(p=>{
     const sizes=sizesOf(p.talla);
-    return `<article class="product catalog-product-card product-card-clickable" role="group" tabindex="0" aria-label="Ver detalles de ${esc(p.name)}" onclick="openDetail(${JSON.stringify(String(p.id))})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetail(${JSON.stringify(String(p.id))})}"><div class="pic">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Foto del producto'}${p.offer?'<span class="offer-badge">OFERTA</span>':''}<button type="button" class="product-heart ${favorites.includes(String(p.id))?'is-favorite':''}" aria-label="${favorites.includes(String(p.id))?'Quitar de favoritos':'Agregar a favoritos'}" title="${favorites.includes(String(p.id))?'Quitar de favoritos':'Favorito'}" onclick="event.stopPropagation();toggleFavorite(${p.id})">${favorites.includes(String(p.id))?'♥':'♡'}</button></div><div class="product-body"><div class="tag">${esc(p.brand||p.category)}${p.category&&p.brand?' · '+esc(p.category):''}</div><h3>${esc(p.name)}</h3>${p.model?`<p class="model-line">Modelo: <b>${esc(p.model)}</b></p>`:''}${sizes.length?`<div class="size-list"><span>Tallas:</span>${sizes.slice(0,5).map(s=>`<b>${esc(s)}</b>`).join('')}</div>`:''}<div class="product-bottom"><div class="price">${money(p.price)}</div><small>${stockLabel(p)}</small></div><button class="secondary catalog-add" onclick="event.stopPropagation();openDetail(${JSON.stringify(String(p.id))})">Ver producto</button></div></article>`;
+    return `<article class="product catalog-product-card product-card-clickable" data-product-card data-product-id="${esc(p.id)}" role="group" tabindex="0" aria-label="Ver detalles de ${esc(p.name)}"><div class="pic">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Foto del producto'}${p.offer?'<span class="offer-badge">OFERTA</span>':''}<button type="button" class="product-heart ${favorites.includes(String(p.id))?'is-favorite':''}" aria-label="${favorites.includes(String(p.id))?'Quitar de favoritos':'Agregar a favoritos'}" title="${favorites.includes(String(p.id))?'Quitar de favoritos':'Favorito'}" data-favorite-product="${esc(p.id)}">${favorites.includes(String(p.id))?'♥':'♡'}</button></div><div class="product-body"><div class="tag">${esc(p.brand||p.category)}${p.category&&p.brand?' · '+esc(p.category):''}</div><h3>${esc(p.name)}</h3>${p.model?`<p class="model-line">Modelo: <b>${esc(p.model)}</b></p>`:''}${sizes.length?`<div class="size-list"><span>Tallas:</span>${sizes.slice(0,5).map(s=>`<b>${esc(s)}</b>`).join('')}</div>`:''}<div class="product-bottom"><div class="price">${money(p.price)}</div><small>${stockLabel(p)}</small></div><button class="secondary catalog-add" data-open-product="${esc(p.id)}">Ver producto</button></div></article>`;
   }).join("")||'<p class="empty">No encontramos productos con esos filtros.</p>';
   renderCart();
 }
@@ -505,7 +505,7 @@ function renderOffers(){
   el.innerHTML=offers.map(p=>{
     const sizes=sizesOf(p.talla);
     const categoryLabel=p.category||"Producto";
-    return `<article class="product offer-product-card product-card-clickable" role="group" tabindex="0" aria-label="Ver detalles de ${esc(p.name)}" onclick="openDetail(${JSON.stringify(String(p.id))})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDetail(${JSON.stringify(String(p.id))})}"><div class="pic">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Foto del producto'}<span class="offer-badge">OFERTA</span></div><div class="product-body"><div class="tag">${esc(p.brand||categoryLabel)}${p.category&&p.brand?' · '+esc(p.category):''}</div><h3>${esc(p.name)}</h3>${p.model?`<p class="model-line">Modelo: <b>${esc(p.model)}</b></p>`:''}${sizes.length?`<div class="size-list"><span>Tallas:</span>${sizes.slice(0,5).map(x=>`<b>${esc(x)}</b>`).join('')}</div>`:''}<div class="product-bottom"><div>${offerPriceMarkup(p)}</div><small>${stockLabel(p)}</small></div><div class="product-actions"><button class="secondary" onclick="event.stopPropagation();openDetail(${JSON.stringify(String(p.id))})">Ver producto</button><button class="add" onclick="event.stopPropagation();openDetail(${JSON.stringify(String(p.id))})">Elegir talla / agregar</button></div></div></article>`;
+    return `<article class="product offer-product-card product-card-clickable" data-product-card data-product-id="${esc(p.id)}" role="group" tabindex="0" aria-label="Ver detalles de ${esc(p.name)}"><div class="pic">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'Foto del producto'}<span class="offer-badge">OFERTA</span></div><div class="product-body"><div class="tag">${esc(p.brand||categoryLabel)}${p.category&&p.brand?' · '+esc(p.category):''}</div><h3>${esc(p.name)}</h3>${p.model?`<p class="model-line">Modelo: <b>${esc(p.model)}</b></p>`:''}${sizes.length?`<div class="size-list"><span>Tallas:</span>${sizes.slice(0,5).map(x=>`<b>${esc(x)}</b>`).join('')}</div>`:''}<div class="product-bottom"><div>${offerPriceMarkup(p)}</div><small>${stockLabel(p)}</small></div><div class="product-actions"><button class="secondary" data-open-product="${esc(p.id)}">Ver producto</button><button class="add" data-open-product="${esc(p.id)}">Elegir talla / agregar</button></div></div></article>`;
   }).join('');
 }
 
@@ -609,6 +609,38 @@ async function startStore(){
   document.getElementById("search").oninput=renderStore;
   document.getElementById("catalogSort")?.addEventListener("change",e=>{catalogSort=e.target.value;renderStore();});
   document.getElementById("cartBtn").onclick=openCart;
+  // Delegación robusta para abrir detalles desde la tarjeta completa o sus botones.
+  // Evita atributos onclick con IDs entrecomillados, que podían romperse al renderizar.
+  const bindProductOpen = (container) => {
+    if(!container || container.dataset.productOpenBound) return;
+    container.dataset.productOpenBound = "true";
+    container.addEventListener("click", event => {
+      const favoriteButton = event.target.closest("[data-favorite-product]");
+      if(favoriteButton && container.contains(favoriteButton)) {
+        event.preventDefault(); event.stopPropagation();
+        toggleFavorite(favoriteButton.dataset.favoriteProduct);
+        return;
+      }
+      const openButton = event.target.closest("[data-open-product]");
+      if(openButton && container.contains(openButton)) {
+        event.preventDefault(); event.stopPropagation();
+        openDetail(openButton.dataset.openProduct);
+        return;
+      }
+      const card = event.target.closest("[data-product-card]");
+      if(card && container.contains(card) && !event.target.closest("button, a, input, select, textarea, label")) {
+        openDetail(card.dataset.productId);
+      }
+    });
+    container.addEventListener("keydown", event => {
+      const card = event.target.closest("[data-product-card]");
+      if(card && container.contains(card) && (event.key === "Enter" || event.key === " ") && !event.target.closest("button, a, input, select, textarea")) {
+        event.preventDefault(); openDetail(card.dataset.productId);
+      }
+    });
+  };
+  bindProductOpen(document.getElementById("products"));
+  bindProductOpen(document.getElementById("offerProducts"));
   // Delegación de eventos: garantiza que los botones del carrito sigan funcionando
   // aunque el contenido se vuelva a dibujar después de cambiar cantidades.
   const cartItemsEl=document.getElementById("cartItems");
