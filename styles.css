@@ -2212,11 +2212,3 @@
     top: 7px !important;
   }
 }
-
-
-/* Orden definitivo de navegación: Inicio, Categorías, Catálogo, Ofertas. */
-.nav nav { display: flex !important; }
-.nav nav a[href="#inicio"] { order: 1 !important; }
-.nav nav a[href="#categorias"] { order: 2 !important; }
-.nav nav a[href="#catalogo"] { order: 3 !important; }
-.nav nav a[href="#ofertas"] { order: 4 !important; }
