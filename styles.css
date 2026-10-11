@@ -2647,3 +2647,21 @@ body.detail-open {
     max-height: calc(100dvh - 24px);
   }
 }
+
+
+/* Bloqueo real del fondo mientras se consulta un producto (PC y móvil).
+   Solo el contenido desplazable del detalle puede hacer scroll. */
+body.detail-open {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+#detailModal:not(.hidden) {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+#detailModal:not(.hidden) .detail-box {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
