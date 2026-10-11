@@ -2623,45 +2623,20 @@
 }
 
 
-/* Detalle de producto: ocultar temporalmente la barra fija para que no tape la foto ni la X.
-   El modal conserva su tamaño y distribución originales tanto en PC como en móvil. */
-body.detail-open > .nav {
-  visibility: hidden !important;
-  pointer-events: none !important;
+/* Detalle de producto: scroll contenido en la ventana, sin arrastrar la página de atrás. */
+html.detail-scroll-locked,
+body.detail-scroll-locked {
+  overscroll-behavior: none !important;
 }
-body.detail-open {
-  overflow: hidden;
-}
-#detailModal:not(.hidden) {
-  z-index: 2000;
-}
-#detailModal:not(.hidden) .detail-box {
-  max-height: calc(100dvh - 24px);
-}
-@media (max-width: 700px) {
-  #detailModal:not(.hidden) {
-    padding: 12px;
-    align-items: start;
-  }
-  #detailModal:not(.hidden) .detail-box {
-    max-height: calc(100dvh - 24px);
-  }
-}
-
-
-/* Bloqueo real del fondo mientras se consulta un producto (PC y móvil).
-   Solo el contenido desplazable del detalle puede hacer scroll. */
-body.detail-open {
-  overflow: hidden !important;
-  overscroll-behavior: none;
-  touch-action: none;
-}
-#detailModal:not(.hidden) {
-  overscroll-behavior: contain;
+#detailModal {
+  overscroll-behavior: contain !important;
   touch-action: pan-y;
 }
-#detailModal:not(.hidden) .detail-box {
-  overscroll-behavior: contain;
+#detailModal .detail-box {
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
+
+body.detail-scroll-locked > .nav { visibility: hidden !important; pointer-events: none !important; }
