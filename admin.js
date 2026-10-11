@@ -1,4 +1,8 @@
 let editingId = null;
+let editingVisualBrandId = null;
+let editingVisualBrandImage = "";
+let editingVisualCategoryId = null;
+let editingVisualCategoryImage = "";
 
 const $ = id => document.getElementById(id);
 
@@ -76,13 +80,31 @@ async function renderVisualConfig(){
   const brandWrap=$("visualBrandsList");
   try{
     const [cats,brands]=await Promise.all([getVisualCategories(),getVisualBrands()]);
+    window.__visualCategoriesCache = cats;
+    window.__visualBrandsCache = brands;
     setNextVisualOrders(cats, brands);
 
     if(catWrap){
-      catWrap.innerHTML = cats.map(c=>`<div class="admin-item"><img src="${c.imagen||''}" alt=""><div class="grow"><b>${c.etiqueta||c.nombre}</b><br><small>Destino: ${c.nombre} · Orden ${c.orden}</small></div><button onclick="toggleVisualCategory(${c.id},${!c.activo})">${c.activo?'Ocultar':'Mostrar'}</button></div>`).join("") || '<div class="empty">No hay categorías visuales.</div>';
+      catWrap.innerHTML = cats.map(c=>`<div class="admin-item visual-category-item">
+        <img src="${escapeVisualHtml(c.imagen||'')}" alt="Imagen de ${escapeVisualHtml(c.etiqueta||c.nombre)}" onerror="this.style.visibility='hidden'">
+        <div class="grow"><b>${escapeVisualHtml(c.etiqueta||c.nombre)}</b><br><small>Destino: ${escapeVisualHtml(c.nombre)} · Orden ${Number(c.orden)||0} · ${c.activo?'Visible':'Oculta'}</small></div>
+        <div class="visual-category-actions">
+          <button type="button" class="visual-category-toggle" onclick="toggleVisualCategory(${Number(c.id)},${!c.activo})">${c.activo?'Ocultar':'Mostrar'}</button>
+          <button type="button" class="visual-category-edit" onclick="editVisualCategory(${Number(c.id)})">Editar</button>
+          <button type="button" class="visual-category-delete" onclick="deleteVisualCategory(${Number(c.id)})">Eliminar</button>
+        </div>
+      </div>`).join("") || '<div class="empty">No hay categorías visuales.</div>';
     }
     if(brandWrap){
-      brandWrap.innerHTML = brands.map(b=>`<div class="admin-item"><img src="${b.imagen||''}" alt=""><div class="grow"><b>${b.nombre}</b><br><small>Orden ${b.orden} · ${b.destacada?'Destacada':'No destacada'}</small></div><button onclick="toggleVisualBrand(${b.id},${!b.activo})">${b.activo?'Ocultar':'Mostrar'}</button></div>`).join("") || '<div class="empty">No hay marcas visuales.</div>';
+      brandWrap.innerHTML = brands.map(b=>`<div class="admin-item visual-brand-item">
+        <img src="${escapeVisualHtml(b.imagen||'')}" alt="Logo de ${escapeVisualHtml(b.nombre)}" onerror="this.style.visibility='hidden'">
+        <div class="grow"><b>${escapeVisualHtml(b.nombre)}</b><br><small>Orden ${Number(b.orden)||0} · ${b.destacada?'Destacada':'No destacada'} · ${b.activo?'Visible':'Oculta'}</small></div>
+        <div class="visual-brand-actions">
+          <button type="button" class="visual-brand-toggle" onclick="toggleVisualBrand(${Number(b.id)},${!b.activo})">${b.activo?'Ocultar':'Mostrar'}</button>
+          <button type="button" class="visual-brand-edit" onclick="editVisualBrand(${Number(b.id)})">Editar</button>
+          <button type="button" class="visual-brand-delete" onclick="deleteVisualBrand(${Number(b.id)})">Eliminar</button>
+        </div>
+      </div>`).join("") || '<div class="empty">No hay marcas visuales.</div>';
     }
   }catch(error){
     const msg=`<div class="empty">Primero ejecuta tienda_visual.sql en Supabase. ${error.message}</div>`;
@@ -100,39 +122,175 @@ async function toggleVisualBrand(id,activo){
   if(error) return alert(error.message);
   await renderVisualConfig();
 }
-async function addVisualCategory(){
-  const nombre=$("visualCatName").value.trim();
-  const etiqueta=$("visualCatLabel").value.trim()||nombre;
-  const orden=Math.max(0,Number($("visualCatOrder").value)||1);
-  if(!nombre) return alert("Escribe el nombre de la categoría.");
+function resetVisualCategoryForm(){
+  editingVisualCategoryId = null;
+  editingVisualCategoryImage = "";
+  $("visualCatName").value = "";
+  $("visualCatLabel").value = "";
+  $("visualCatOrder").value = String(nextVisualOrder(window.__visualCategoriesCache || []));
+  $("visualCatImage").value = "";
+  $("saveVisualCat").textContent = "+ Agregar categoría";
+  $("cancelVisualCatEdit")?.classList.add("hidden");
+  const status = $("visualCatEditStatus");
+  if(status) status.textContent = "";
+}
+
+async function editVisualCategory(id){
   try{
-    let imagen="";
-    const file=$("visualCatImage").files[0];
-    if(file) imagen=await uploadVisualImage(file);
-    const {error}=await supabaseClient.from("tienda_categorias").insert({nombre,etiqueta,imagen,orden,activo:true});
+    const {data,error}=await supabaseClient.from("tienda_categorias").select("id,nombre,etiqueta,imagen,activo,orden").eq("id",id).single();
     if(error) throw error;
-    $("visualCatName").value=""; $("visualCatLabel").value=""; $("visualCatImage").value="";
+    editingVisualCategoryId = data.id;
+    editingVisualCategoryImage = data.imagen || "";
+    $("visualCatName").value = data.nombre || "";
+    $("visualCatLabel").value = data.etiqueta || data.nombre || "";
+    $("visualCatOrder").value = Number(data.orden)||1;
+    $("visualCatImage").value = "";
+    $("saveVisualCat").textContent = "Guardar cambios";
+    $("cancelVisualCatEdit")?.classList.remove("hidden");
+    const status = $("visualCatEditStatus");
+    if(status) status.textContent = `Editando: ${data.etiqueta||data.nombre}. Si no eliges otra imagen, se conservará la actual.`;
+    $("visualCatName").scrollIntoView({behavior:"smooth",block:"center"});
+    $("visualCatName").focus({preventScroll:true});
+  }catch(error){ alert("No se pudo cargar la categoría para editar: "+error.message); }
+}
+
+async function deleteVisualCategory(id){
+  try{
+    const {data,error:readError}=await supabaseClient.from("tienda_categorias").select("id,nombre,etiqueta").eq("id",id).single();
+    if(readError) throw readError;
+    const label=data.etiqueta||data.nombre;
+    if(!confirm(`¿Eliminar definitivamente la categoría “${label}”?\n\nEsta acción la quitará de la configuración visual de la tienda.`)) return;
+    const {error}=await supabaseClient.from("tienda_categorias").delete().eq("id",id);
+    if(error) throw error;
+    if(String(editingVisualCategoryId)===String(id)) resetVisualCategoryForm();
     await syncLocalCategoriesFromVisual();
     await renderCategoryBrands();
     await renderVisualConfig();
-    alert("Categoría visual agregada. ✅");
-  }catch(error){ alert("No se pudo agregar: "+error.message); }
+    alert("Categoría eliminada correctamente.");
+  }catch(error){ alert("No se pudo eliminar la categoría: "+error.message); }
 }
+
+const cancelVisualCatEditBtn = $("cancelVisualCatEdit");
+if(cancelVisualCatEditBtn) cancelVisualCatEditBtn.addEventListener("click", resetVisualCategoryForm);
+
+async function addVisualCategory(){
+  const nombre=$("visualCatName").value.trim();
+  const etiqueta=$("visualCatLabel").value.trim()||nombre;
+  const orden=Math.max(1,Number($("visualCatOrder").value)||1);
+  if(!nombre) return alert("Escribe el nombre de la categoría.");
+  try{
+    let imagen=editingVisualCategoryImage;
+    const file=$("visualCatImage").files[0];
+    if(file) imagen=await uploadVisualImage(file);
+    if(editingVisualCategoryId){
+      const {data:oldRow,error:oldError}=await supabaseClient.from("tienda_categorias").select("nombre").eq("id",editingVisualCategoryId).single();
+      if(oldError) throw oldError;
+      const {error}=await supabaseClient.from("tienda_categorias").update({nombre,etiqueta,imagen:imagen||"",orden}).eq("id",editingVisualCategoryId);
+      if(error) throw error;
+      // Si cambia el destino/nombre, actualizar también las referencias existentes para no romper filtros.
+      if(oldRow.nombre && oldRow.nombre !== nombre){
+        const updates = await Promise.all([
+          supabaseClient.from("productos").update({categoria:nombre}).eq("categoria",oldRow.nombre),
+          supabaseClient.from("categoria_marcas").update({categoria:nombre}).eq("categoria",oldRow.nombre)
+        ]);
+        const failed = updates.find(x=>x.error);
+        if(failed) console.warn("La categoría se guardó, pero no se pudieron actualizar todas las referencias:",failed.error.message);
+      }
+      resetVisualCategoryForm();
+      await syncLocalCategoriesFromVisual();
+      await renderCategoryBrands();
+      await renderVisualConfig();
+      alert("Categoría actualizada correctamente. ✅");
+    }else{
+      const {error}=await supabaseClient.from("tienda_categorias").insert({nombre,etiqueta,imagen:imagen||"",orden,activo:true});
+      if(error) throw error;
+      resetVisualCategoryForm();
+      await syncLocalCategoriesFromVisual();
+      await renderCategoryBrands();
+      await renderVisualConfig();
+      alert("Categoría visual agregada. ✅");
+    }
+  }catch(error){ alert("No se pudo guardar la categoría: "+error.message); }
+}
+function escapeVisualHtml(value){
+  return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+}
+
+function resetVisualBrandForm(){
+  editingVisualBrandId = null;
+  editingVisualBrandImage = "";
+  $("visualBrandName").value = "";
+  $("visualBrandOrder").value = String(nextVisualOrder(window.__visualBrandsCache || []));
+  $("visualBrandImage").value = "";
+  $("visualBrandFeatured").checked = true;
+  $("saveVisualBrand").textContent = "+ Agregar marca";
+  $("cancelVisualBrandEdit")?.classList.add("hidden");
+  const status = $("visualBrandEditStatus");
+  if(status) status.textContent = "";
+}
+
+async function editVisualBrand(id){
+  try{
+    const {data,error}=await supabaseClient.from("tienda_marcas").select("id,nombre,imagen,activo,destacada,orden").eq("id",id).single();
+    if(error) throw error;
+    editingVisualBrandId = data.id;
+    editingVisualBrandImage = data.imagen || "";
+    $("visualBrandName").value = data.nombre || "";
+    $("visualBrandOrder").value = Number(data.orden)||1;
+    $("visualBrandImage").value = "";
+    $("visualBrandFeatured").checked = !!data.destacada;
+    $("saveVisualBrand").textContent = "Guardar cambios";
+    $("cancelVisualBrandEdit")?.classList.remove("hidden");
+    const status = $("visualBrandEditStatus");
+    if(status) status.textContent = `Editando: ${data.nombre}. Si no eliges otra imagen, se conservará el logo actual.`;
+    $("visualBrandName").scrollIntoView({behavior:"smooth",block:"center"});
+    $("visualBrandName").focus({preventScroll:true});
+  }catch(error){
+    alert("No se pudo cargar la marca para editar: "+error.message);
+  }
+}
+
+async function deleteVisualBrand(id){
+  try{
+    const {data,error:readError}=await supabaseClient.from("tienda_marcas").select("id,nombre").eq("id",id).single();
+    if(readError) throw readError;
+    if(!confirm(`¿Eliminar definitivamente la marca “${data.nombre}”?\n\nEsta acción la quitará de las marcas visuales de la tienda.`)) return;
+    const {error}=await supabaseClient.from("tienda_marcas").delete().eq("id",id);
+    if(error) throw error;
+    if(String(editingVisualBrandId)===String(id)) resetVisualBrandForm();
+    await renderVisualConfig();
+    alert("Marca eliminada correctamente.");
+  }catch(error){
+    alert("No se pudo eliminar la marca: "+error.message);
+  }
+}
+
+const cancelVisualBrandEditBtn = $("cancelVisualBrandEdit");
+if(cancelVisualBrandEditBtn) cancelVisualBrandEditBtn.addEventListener("click", resetVisualBrandForm);
+
 async function addVisualBrand(){
   const nombre=$("visualBrandName").value.trim();
-  const orden=Math.max(0,Number($("visualBrandOrder").value)||1);
+  const orden=Math.max(1,Number($("visualBrandOrder").value)||1);
   const destacada=$("visualBrandFeatured").checked;
   if(!nombre) return alert("Escribe el nombre de la marca.");
   try{
-    let imagen="";
+    let imagen=editingVisualBrandImage;
     const file=$("visualBrandImage").files[0];
     if(file) imagen=await uploadVisualImage(file);
-    const {error}=await supabaseClient.from("tienda_marcas").insert({nombre,imagen,orden,destacada,activo:true});
-    if(error) throw error;
-    $("visualBrandName").value=""; $("visualBrandImage").value="";
-    await renderVisualConfig();
-    alert("Marca agregada. ✅");
-  }catch(error){ alert("No se pudo agregar: "+error.message); }
+    if(editingVisualBrandId){
+      const {error}=await supabaseClient.from("tienda_marcas").update({nombre,imagen:imagen||"",orden,destacada}).eq("id",editingVisualBrandId);
+      if(error) throw error;
+      resetVisualBrandForm();
+      await renderVisualConfig();
+      alert("Marca actualizada correctamente. ✅");
+    }else{
+      const {error}=await supabaseClient.from("tienda_marcas").insert({nombre,imagen:imagen||"",orden,destacada,activo:true});
+      if(error) throw error;
+      $("visualBrandName").value=""; $("visualBrandImage").value="";
+      await renderVisualConfig();
+      alert("Marca agregada. ✅");
+    }
+  }catch(error){ alert("No se pudo guardar la marca: "+error.message); }
 }
 
 // Botones de categorías y marcas visuales
