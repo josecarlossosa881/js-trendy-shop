@@ -40,6 +40,12 @@ let activeSize = "Todas";
 let detailId = null;
 let detailSelectedSize = "";
 let detailQuantity = 1;
+// Guarda la posición y los estilos originales para inmovilizar la página de atrás
+// sin provocar una animación al cerrar el detalle.
+let detailScrollPosition = null;
+let detailLockActive = false;
+let detailOriginalBodyStyles = null;
+let detailOriginalHtmlScrollBehavior = "";
 let sizeInventory = new Map();
 let sizeInventoryReady = false;
 let catalogSort="default";
@@ -515,28 +521,57 @@ function renderOffers(){
   }).join('');
 }
 
-let detailPageScrollY = 0;
-let detailPageScrollLocked = false;
-
-function lockPageBehindDetail(){
-  if(detailPageScrollLocked) return;
-  detailPageScrollY = window.scrollY || window.pageYOffset || 0;
-  detailPageScrollLocked = true;
-  document.body.style.position = "fixed";
-  document.body.style.top = `-${detailPageScrollY}px`;
-  document.body.style.left = "0";
-  document.body.style.right = "0";
-  document.body.style.width = "100%";
+function lockPageForDetail(){
+  if(detailLockActive) return;
+  detailScrollPosition = window.scrollY || window.pageYOffset || 0;
+  const body = document.body;
+  const html = document.documentElement;
+  detailOriginalBodyStyles = {
+    position: body.style.position,
+    top: body.style.top,
+    left: body.style.left,
+    right: body.style.right,
+    width: body.style.width,
+    overflow: body.style.overflow,
+  };
+  detailOriginalHtmlScrollBehavior = html.style.scrollBehavior;
+  html.classList.add("detail-scroll-locked");
+  body.classList.add("detail-scroll-locked");
+  body.style.position = "fixed";
+  body.style.top = `-${detailScrollPosition}px`;
+  body.style.left = "0";
+  body.style.right = "0";
+  body.style.width = "100%";
+  body.style.overflow = "hidden";
+  detailLockActive = true;
 }
-function unlockPageBehindDetail(){
-  if(!detailPageScrollLocked) return;
-  document.body.style.position = "";
-  document.body.style.top = "";
-  document.body.style.left = "";
-  document.body.style.right = "";
-  document.body.style.width = "";
-  detailPageScrollLocked = false;
-  window.scrollTo(0, detailPageScrollY);
+
+function unlockPageAfterDetail(){
+  if(!detailLockActive) return;
+  const y = Number(detailScrollPosition) || 0;
+  const body = document.body;
+  const html = document.documentElement;
+  const original = detailOriginalBodyStyles || {};
+  // Desactiva temporalmente el scroll suave global para que no se vea
+  // el recorrido por el inicio de la página al cerrar el producto.
+  html.style.scrollBehavior = "auto";
+  body.style.position = original.position || "";
+  body.style.top = original.top || "";
+  body.style.left = original.left || "";
+  body.style.right = original.right || "";
+  body.style.width = original.width || "";
+  body.style.overflow = original.overflow || "";
+  body.classList.remove("detail-scroll-locked");
+  html.classList.remove("detail-scroll-locked");
+  detailLockActive = false;
+  detailScrollPosition = null;
+  detailOriginalBodyStyles = null;
+  window.scrollTo(0, y);
+  const priorBehavior = detailOriginalHtmlScrollBehavior;
+  detailOriginalHtmlScrollBehavior = "";
+  requestAnimationFrame(() => {
+    html.style.scrollBehavior = priorBehavior || "";
+  });
 }
 
 async function openDetail(id){
@@ -573,9 +608,8 @@ async function openDetail(id){
   document.querySelectorAll("#detailSizeButtons .detail-size-button").forEach(button=>{
     button.addEventListener("click",()=>onDetailSizeChange(button.dataset.size));
   });
-  lockPageBehindDetail();
+  lockPageForDetail();
   document.getElementById("detailModal").classList.remove("hidden");
-  document.body.classList.add("detail-open");
 }
 window.onDetailSizeChange = onDetailSizeChange;
 function onDetailSizeChange(size){
@@ -634,7 +668,11 @@ function openProductImage(src,name){
   const img=viewer.querySelector("img");img.src=src;img.alt=name||"Imagen completa del producto";
   viewer.classList.remove("hidden");
 }
-function closeDetail(){document.getElementById("detailModal").classList.add("hidden");document.body.classList.remove("detail-open");unlockPageBehindDetail();detailId=null;}
+function closeDetail(){
+  document.getElementById("detailModal").classList.add("hidden");
+  detailId=null;
+  unlockPageAfterDetail();
+}
 
 
 // Navegación fija: mueve el indicador negro según la sección visible,
