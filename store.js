@@ -515,6 +515,30 @@ function renderOffers(){
   }).join('');
 }
 
+let detailPageScrollY = 0;
+let detailPageScrollLocked = false;
+
+function lockPageBehindDetail(){
+  if(detailPageScrollLocked) return;
+  detailPageScrollY = window.scrollY || window.pageYOffset || 0;
+  detailPageScrollLocked = true;
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${detailPageScrollY}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+function unlockPageBehindDetail(){
+  if(!detailPageScrollLocked) return;
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  detailPageScrollLocked = false;
+  window.scrollTo(0, detailPageScrollY);
+}
+
 async function openDetail(id){
   detailId=id;
   // No seleccionar ninguna talla por defecto: la selección visual siempre
@@ -549,6 +573,7 @@ async function openDetail(id){
   document.querySelectorAll("#detailSizeButtons .detail-size-button").forEach(button=>{
     button.addEventListener("click",()=>onDetailSizeChange(button.dataset.size));
   });
+  lockPageBehindDetail();
   document.getElementById("detailModal").classList.remove("hidden");
   document.body.classList.add("detail-open");
 }
@@ -609,7 +634,7 @@ function openProductImage(src,name){
   const img=viewer.querySelector("img");img.src=src;img.alt=name||"Imagen completa del producto";
   viewer.classList.remove("hidden");
 }
-function closeDetail(){document.getElementById("detailModal").classList.add("hidden");document.body.classList.remove("detail-open");detailId=null;}
+function closeDetail(){document.getElementById("detailModal").classList.add("hidden");document.body.classList.remove("detail-open");unlockPageBehindDetail();detailId=null;}
 
 
 // Navegación fija: mueve el indicador negro según la sección visible,
