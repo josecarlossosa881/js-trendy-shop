@@ -608,7 +608,19 @@ function openProductImage(src,name){
   const img=viewer.querySelector("img");img.src=src;img.alt=name||"Imagen completa del producto";
   viewer.classList.remove("hidden");
 }
-function closeDetail(){document.getElementById("detailModal").classList.add("hidden");detailId=null;}
+function closeDetail(){
+  const modal=document.getElementById("detailModal");
+  if(modal) modal.classList.add("hidden");
+  detailId=null;
+}
+
+// Cierre del detalle disponible en móvil y escritorio, también con Escape.
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"){
+    const modal=document.getElementById("detailModal");
+    if(modal && !modal.classList.contains("hidden")) closeDetail();
+  }
+});
 
 
 // Navegación fija: mueve el indicador negro según la sección visible,
