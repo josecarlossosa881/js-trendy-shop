@@ -670,6 +670,21 @@ async function startStore(){
   if(!document.getElementById("products"))return;
   setupSectionNavigation();
   document.getElementById("search").oninput=renderStore;
+  // En móvil, la lupa abre el buscador dentro del catálogo; en escritorio
+  // se conserva el comportamiento existente del enlace hacia el catálogo.
+  const mobileSearchTrigger=document.getElementById("mobileSearchBtn");
+  mobileSearchTrigger?.addEventListener("click", event=>{
+    if(!window.matchMedia("(max-width: 850px)").matches) return;
+    event.preventDefault();
+    event.stopPropagation();
+    document.body.classList.add("mobile-catalog-open");
+    const catalog=document.getElementById("catalogo");
+    if(catalog) catalog.scrollIntoView({behavior:"smooth",block:"start"});
+    window.setTimeout(()=>{
+      const searchInput=document.getElementById("search");
+      searchInput?.focus({preventScroll:true});
+    },350);
+  });
   document.getElementById("catalogSort")?.addEventListener("change",e=>{catalogSort=e.target.value;renderStore();});
   document.getElementById("cartBtn").onclick=openCart;
   // Delegación robusta para abrir detalles desde la tarjeta completa o sus botones.
