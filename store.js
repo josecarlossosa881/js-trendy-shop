@@ -550,6 +550,7 @@ async function openDetail(id){
     button.addEventListener("click",()=>onDetailSizeChange(button.dataset.size));
   });
   document.getElementById("detailModal").classList.remove("hidden");
+  document.body.classList.add("detail-open");
 }
 window.onDetailSizeChange = onDetailSizeChange;
 function onDetailSizeChange(size){
@@ -608,19 +609,7 @@ function openProductImage(src,name){
   const img=viewer.querySelector("img");img.src=src;img.alt=name||"Imagen completa del producto";
   viewer.classList.remove("hidden");
 }
-function closeDetail(){
-  const modal=document.getElementById("detailModal");
-  if(modal) modal.classList.add("hidden");
-  detailId=null;
-}
-
-// Cierre del detalle disponible en móvil y escritorio, también con Escape.
-document.addEventListener("keydown",event=>{
-  if(event.key==="Escape"){
-    const modal=document.getElementById("detailModal");
-    if(modal && !modal.classList.contains("hidden")) closeDetail();
-  }
-});
+function closeDetail(){document.getElementById("detailModal").classList.add("hidden");document.body.classList.remove("detail-open");detailId=null;}
 
 
 // Navegación fija: mueve el indicador negro según la sección visible,
