@@ -64,6 +64,12 @@
     .inventory-empty-photo{font-size:10px;color:#888;text-align:center}
     @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}.size-inventory-card{padding:8px}.size-inventory-table{min-width:790px}}
     @media(max-width:800px){.visual-admin-grid{grid-template-columns:1fr}}
+    /* Botón de guardar marcas: contraste explícito y adaptación en móvil/PC. */
+    #catList .category-brand-save-row{display:flex!important;align-items:stretch!important;gap:10px!important;width:100%!important;min-width:0!important;}
+    #catList .category-brand-save-row input{flex:1 1 320px!important;min-width:0!important;width:100%!important;box-sizing:border-box!important;}
+    #catList .category-brand-save-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:138px!important;min-height:44px!important;padding:10px 16px!important;background:#171717!important;color:#fff!important;border:1px solid #171717!important;border-radius:7px!important;font-size:14px!important;font-weight:700!important;line-height:1.2!important;white-space:nowrap!important;visibility:visible!important;opacity:1!important;}
+    @media(max-width:700px){#catList .category-brand-save-row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;}#catList .category-brand-save-btn{width:100%!important;min-width:0!important;min-height:46px!important;font-size:15px!important;}}
+
   
 /* Ajustes responsive integrados para que funcionen aunque el CSS externo esté en caché. */
 @media (max-width: 700px) {
@@ -537,6 +543,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="admin-auth.js?v=20261009-2"></script>
-  <script src="admin.js?v=20261011-marcas-editar-eliminar-v1"></script>
+  <script src="admin.js?v=20261012-guardar-marcas-visible-v1"></script>
 </body>
 </html>
