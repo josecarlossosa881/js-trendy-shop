@@ -187,14 +187,22 @@ async function addVisualCategory(){
       if(oldError) throw oldError;
       const {error}=await supabaseClient.from("tienda_categorias").update({nombre,etiqueta,imagen:imagen||"",orden}).eq("id",editingVisualCategoryId);
       if(error) throw error;
-      // Si cambia el destino/nombre, actualizar también las referencias existentes para no romper filtros.
-      if(oldRow.nombre && oldRow.nombre !== nombre){
+      // Mantener sincronizados productos, reglas de marcas y categorías locales al renombrar.
+      if(oldRow.nombre && oldRow.nombre.trim() !== nombre.trim()){
+        const oldName = oldRow.nombre.trim();
         const updates = await Promise.all([
-          supabaseClient.from("productos").update({categoria:nombre}).eq("categoria",oldRow.nombre),
-          supabaseClient.from("categoria_marcas").update({categoria:nombre}).eq("categoria",oldRow.nombre)
+          supabaseClient.from("productos").update({categoria:nombre}).eq("categoria",oldName),
+          supabaseClient.from("categoria_marcas").update({categoria:nombre}).eq("categoria",oldName)
         ]);
         const failed = updates.find(x=>x.error);
-        if(failed) console.warn("La categoría se guardó, pero no se pudieron actualizar todas las referencias:",failed.error.message);
+        if(failed) throw new Error("El nombre se guardó, pero no se pudieron sincronizar todas las referencias: " + failed.error.message);
+
+        // Actualizar también el listado local usado por el selector de categoría,
+        // para que el nombre anterior no siga apareciendo en esta misma sesión.
+        const localCats = getCats().map(c =>
+          String(c || "").trim().toLocaleLowerCase() === oldName.toLocaleLowerCase() ? nombre : c
+        );
+        saveCats(["Todos", ...new Map(localCats.filter(Boolean).map(c => [String(c).trim().toLocaleLowerCase(), String(c).trim()])).values()]);
       }
       resetVisualCategoryForm();
       await syncLocalCategoriesFromVisual();
@@ -403,9 +411,21 @@ async function saveCategoryBrands(category, brandsText){
 
 async function renderCategoryBrands(){
   const list=$("catList");
-  const cats=await getAllCategoryNames();
+  // Esta pestaña debe mostrar solo las categorías que siguen registradas
+  // en la pestaña de configuración de categorías visuales. Así, al eliminar
+  // una categoría, deja de aparecer aquí aunque existan productos antiguos
+  // que todavía tengan ese nombre guardado.
+  let cats=[];
   let rules=[];
-  try{ rules=await getCategoryBrandRules(); }
+  try{
+    const visualCategories=await getVisualCategories();
+    cats=visualCategories
+      .filter(c=>c.activo !== false)
+      .sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0))
+      .map(c=>String(c.nombre||"").trim())
+      .filter(Boolean);
+    rules=await getCategoryBrandRules();
+  }
   catch(error){
     list.innerHTML=`<div class="empty">No se pudo cargar la configuración de marcas: ${error.message}</div>`;
     return;
