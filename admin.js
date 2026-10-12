@@ -597,7 +597,6 @@ async function openModal(id = null){
   $("pPreviousPrice").value = p?.previousPrice ?? "";
   await fillBrandOptions(p?.brand || "");
   $("pModel").value = p?.model || "";
-  $("pSubcategory").value = p?.subcategory || "";
   $("pTalla").value = p?.talla || "";
   $("pStock").value = p?.stock ?? 1;
   $("pDesc").value = p?.desc || "";
@@ -683,7 +682,6 @@ $("saveProduct").onclick = async () => {
       categoria: $("pCat").value || "",
       marca: $("pBrand").value.trim(),
       modelo: $("pModel").value.trim(),
-      subcategoria: $("pSubcategory").value.trim(),
       talla: $("pHasSizes").checked ? $("pTalla").value.trim() : "",
       stock: Math.max(0, Number($("pStock").value) || 0),
       activo: true,
