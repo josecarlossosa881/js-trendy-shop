@@ -96,27 +96,27 @@ async function loadVisualCatalogConfig(){
       supabaseClient.from("tienda_categorias").select("id,nombre,etiqueta,imagen,orden").eq("activo",true).order("orden",{ascending:true}).order("id",{ascending:true}),
       supabaseClient.from("tienda_marcas").select("id,nombre,imagen,destacada,orden").eq("activo",true).eq("destacada",true).order("orden",{ascending:true}).order("id",{ascending:true})
     ]);
-    if(!catRes.error && Array.isArray(catRes.data) && catRes.data.length){
-      const configured = catRes.data.map(row=>{
-        const label=String(row.etiqueta||row.nombre||"").trim();
-        const dbCategory=String(row.nombre||label).trim();
-        const fallback=FALLBACK_VISUAL_CATEGORIES.find(x=>x.label.toLowerCase()===label.toLowerCase() || x.key===dbCategory.toLowerCase());
-        return {label,key:dbCategory.toLowerCase(),dbCategory,image:String(row.imagen||fallback?.image||"").trim(),icon:fallback?.icon||"✦"};
-      }).filter(x=>x.label);
-      // Combina las categorías configuradas en Supabase con las categorías base
-      // para que la portada no oculte categorías conocidas cuando la tabla tenga solo algunas.
-      const merged = [...configured];
-      FALLBACK_VISUAL_CATEGORIES.forEach(fallback=>{
-        const exists=merged.some(item=>String(item.dbCategory||item.label).toLowerCase()===String(fallback.dbCategory||fallback.label).toLowerCase() || String(item.label).toLowerCase()===String(fallback.label).toLowerCase());
-        if(!exists) merged.push(fallback);
-      });
-      visualCategories = merged;
-    }
-    if(!brandRes.error && Array.isArray(brandRes.data) && brandRes.data.length){
-      featuredBrands = brandRes.data.map(row=>({name:String(row.nombre||"").trim(),image:String(row.imagen||"").trim()})).filter(x=>x.name);
-    }
+
+    // Supabase es la fuente oficial de categorías. No agregar categorías de respaldo:
+    // si una categoría fue eliminada o desactivada en el administrador, no debe reaparecer.
+    if(catRes.error) throw catRes.error;
+    const configured = (Array.isArray(catRes.data) ? catRes.data : []).map(row=>{
+      const label=String(row.etiqueta||row.nombre||"").trim();
+      const dbCategory=String(row.nombre||label).trim();
+      const fallback=FALLBACK_VISUAL_CATEGORIES.find(x=>x.label.toLowerCase()===label.toLowerCase() || x.key===dbCategory.toLowerCase());
+      return {label,key:dbCategory.toLowerCase(),dbCategory,image:String(row.imagen||fallback?.image||"").trim(),icon:fallback?.icon||"✦"};
+    }).filter(x=>x.label && x.dbCategory);
+    visualCategories = configured;
+
+    // Una respuesta vacía es válida: no conservar marcas antiguas desde el respaldo.
+    if(brandRes.error) throw brandRes.error;
+    featuredBrands = (Array.isArray(brandRes.data) ? brandRes.data : [])
+      .map(row=>({name:String(row.nombre||"").trim(),image:String(row.imagen||"").trim()}))
+      .filter(x=>x.name);
   }catch(error){
-    console.warn("Configuración visual no disponible; se usa la configuración incluida en V8.3.", error);
+    // Si falla la lectura, no inventar categorías que podrían haber sido eliminadas.
+    visualCategories = [];
+    console.warn("No se pudo cargar la configuración visual desde Supabase.", error);
   }
 }
 
