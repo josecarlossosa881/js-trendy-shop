@@ -333,7 +333,7 @@ function uiProduct(row){
 async function getProducts(){
   const { data, error } = await supabaseClient
     .from("productos")
-    .select("*")
+     .select("id,nombre,precio,precio_anterior,categoria,marca,modelo,subcategoria,descripcion,oferta,imagen,talla,stock,activo")
     .order("id", { ascending: false });
 
   if(error) throw new Error(error.message);
@@ -472,7 +472,7 @@ async function saveBrandsForCategory(category){
 
 function renderImage(url, name){
   return url
-    ? `<img src="${url}" alt="${name}" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${url}" alt="${name}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">`
     : "";
 }
 
@@ -769,8 +769,8 @@ async function deleteProduct(id){
     try{ await logInventoryMovement({product:p,type:"archivo",quantity:0,before:p.stock,after:p.stock,reason:"Producto archivado"}); }
     catch(logError){ alert(logError.message); }
     await renderAdmin();
-    await renderInventory();
-    await renderArchived();
+    if(!$("inventoryView")?.classList.contains("hidden")) await renderInventory();
+    if(!$("archivedView")?.classList.contains("hidden")) await renderArchived();
     alert("Producto archivado. Puedes recuperarlo desde Productos archivados.");
   }catch(error){
     console.error(error);
@@ -788,31 +788,73 @@ function inventoryProductMarkup(p, archived=false){
   </div>`;
 }
 
-async function ensureSizeRows(product){
-  const sizes=(product.talla||"").split(/[,/|]+/).map(x=>x.trim()).filter(Boolean);
-  if(!sizes.length) return;
-  const {data,error}=await supabaseClient.from("inventario_tallas").select("talla").eq("producto_id",product.id);
-  if(error) throw error;
-  const existing=new Set((data||[]).map(x=>String(x.talla).toLowerCase()));
-  const missing=sizes.filter(s=>!existing.has(s.toLowerCase()));
-  if(missing.length){const {error:e}=await supabaseClient.from("inventario_tallas").insert(missing.map(talla=>({producto_id:product.id,talla,stock:0,vendidas:0})));if(e)throw e;}
+// Caché de la tabla de inventario: escribir en el buscador filtra en memoria
+// y no repite consultas a Supabase en cada pulsación.
+let sizeInventoryCache = null;
+let sizeInventoryLoading = null;
+
+async function loadSizeInventoryData(){
+  if(sizeInventoryLoading) return sizeInventoryLoading;
+  sizeInventoryLoading = (async()=>{
+    const products=(await getProducts()).filter(p=>p.activo);
+    const {data:rows,error}=await supabaseClient
+      .from("inventario_tallas")
+      .select("id,producto_id,talla,stock,vendidas")
+      .order("producto_id").order("talla");
+    if(error) throw error;
+
+    const existingByProduct=new Map();
+    (rows||[]).forEach(r=>{
+      const key=String(r.producto_id);
+      if(!existingByProduct.has(key)) existingByProduct.set(key,new Set());
+      existingByProduct.get(key).add(String(r.talla||"").trim().toLowerCase());
+    });
+
+    // Crear las filas faltantes en una sola inserción, en vez de una consulta por producto.
+    const missing=[];
+    for(const p of products){
+      const sizes=String(p.talla||"").split(/[,/|]+/).map(x=>x.trim()).filter(Boolean);
+      const existing=existingByProduct.get(String(p.id))||new Set();
+      for(const talla of sizes){
+        if(!existing.has(talla.toLowerCase())){
+          missing.push({producto_id:p.id,talla,stock:0,vendidas:0});
+          existing.add(talla.toLowerCase());
+        }
+      }
+    }
+
+    let allRows=rows||[];
+    if(missing.length){
+      const {data:inserted,error:insertError}=await supabaseClient
+        .from("inventario_tallas").insert(missing).select("id,producto_id,talla,stock,vendidas");
+      if(insertError) throw insertError;
+      allRows=allRows.concat(inserted||[]);
+    }
+    const productById=new Map(products.map(p=>[String(p.id),p]));
+    sizeInventoryCache=allRows
+      .map(r=>({...r,product:productById.get(String(r.producto_id))}))
+      .filter(r=>r.product)
+      .filter(r=>String(r.product.talla||"").split(/[,/|]+/).map(x=>x.trim().toLowerCase()).includes(String(r.talla||"").trim().toLowerCase()));
+    return sizeInventoryCache;
+  })();
+  try{return await sizeInventoryLoading;}
+  finally{sizeInventoryLoading=null;}
 }
-async function renderSizeInventory(){
- const wrap=$("sizeInventoryTable"); if(!wrap)return;
- try{
-  const query=String($("inventorySearch")?.value||"").trim().toLowerCase();
-  const products=(await getProducts()).filter(p=>p.activo);
-  for(const p of products) await ensureSizeRows(p);
-  const {data,error}=await supabaseClient.from("inventario_tallas").select("id,producto_id,talla,stock,vendidas").order("producto_id").order("talla");
-  if(error)throw error;
-  const rows=(data||[]).map(r=>({...r,product:products.find(p=>String(p.id)===String(r.producto_id))})).filter(r=>r.product).filter(r=>String(r.product.talla||"").split(/[,/|]+/).map(x=>x.trim().toLowerCase()).includes(String(r.talla||"").trim().toLowerCase())).filter(r=>[r.product.name,r.product.brand,r.product.category,r.product.model,r.product.talla,r.talla].join(" ").toLowerCase().includes(query));
-  if(!rows.length){wrap.innerHTML='<div class="empty" style="padding:22px">No hay tallas que coincidan con la búsqueda. Revisa que el producto tenga tallas registradas.</div>';return;}
-  wrap.innerHTML=`<table class="size-inventory-table"><thead><tr><th>Imagen</th><th>Producto</th><th>Talla</th><th>Stock</th><th>Vendidas</th><th>Acciones</th></tr></thead><tbody>${rows.map(r=>{
-    const p=r.product;
-    const photo=p.image?`<img src="${p.image}" alt="Imagen de ${p.name}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\'inventory-empty-photo\'>Sin foto</span>'">`:'<span class="inventory-empty-photo">Sin foto</span>';
-    return `<tr><td><div class="size-inventory-photo">${photo}</div></td><td><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td><b>${r.talla}</b></td><td><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td>${Number(r.vendidas)||0}</td><td><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button onclick="sizeStockAction(${r.id},'correccion')">Corregir ventas</button><button class="archive-size-btn" onclick="archiveProductSize(${r.id},${p.id})">Archivar talla</button></div></td></tr>`;
-  }).join('')}</tbody></table>`;
- }catch(e){wrap.innerHTML=`<div class="empty" style="padding:20px">No se pudo cargar inventario por talla. Ejecuta inventario_tallas.sql en Supabase. ${e.message}</div>`;}
+
+async function renderSizeInventory({refresh=false}={}){
+  const wrap=$("sizeInventoryTable"); if(!wrap)return;
+  try{
+    if(refresh) sizeInventoryCache=null;
+    const allRows=sizeInventoryCache || await loadSizeInventoryData();
+    const query=String($("inventorySearch")?.value||"").trim().toLowerCase();
+    const rows=allRows.filter(r=>[r.product.name,r.product.brand,r.product.category,r.product.model,r.product.talla,r.talla].join(" ").toLowerCase().includes(query));
+    if(!rows.length){wrap.innerHTML='<div class="empty" style="padding:22px">No hay tallas que coincidan con la búsqueda. Revisa que el producto tenga tallas registradas.</div>';return;}
+    wrap.innerHTML=`<table class="size-inventory-table"><thead><tr><th>Imagen</th><th>Producto</th><th>Talla</th><th>Stock</th><th>Vendidas</th><th>Acciones</th></tr></thead><tbody>${rows.map(r=>{
+      const p=r.product;
+      const photo=p.image?`<img src="${p.image}" alt="Imagen de ${p.name}" loading="lazy" decoding="async" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\\'inventory-empty-photo\\'>Sin foto</span>'">`:'<span class="inventory-empty-photo">Sin foto</span>';
+      return `<tr><td><div class="size-inventory-photo">${photo}</div></td><td><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td><b>${r.talla}</b></td><td><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td>${Number(r.vendidas)||0}</td><td><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button onclick="sizeStockAction(${r.id},'correccion')">Corregir ventas</button><button class="archive-size-btn" onclick="archiveProductSize(${r.id},${p.id})">Archivar talla</button></div></td></tr>`;
+    }).join('')}</tbody></table>`;
+  }catch(e){wrap.innerHTML=`<div class="empty" style="padding:20px">No se pudo cargar inventario por talla. Ejecuta inventario_tallas.sql en Supabase. ${e.message}</div>`;}
 }
 async function archiveProductSize(sizeRowId, productId){
   try{
@@ -835,7 +877,7 @@ async function archiveProductSize(sizeRowId, productId){
     }
     const {error:logError}=await supabaseClient.from("inventario_movimientos").insert({producto_id:productId,producto_nombre:(product.nombre||"Producto")+" · talla "+row.talla,tipo:"archivo_talla",cantidad:0,stock_anterior:Number(row.stock)||0,stock_nuevo:Number(row.stock)||0,motivo:"Talla archivada individualmente desde inventario"});
     if(logError) console.warn("No se pudo registrar el archivo de talla:",logError.message);
-    await renderSizeInventory(); await renderInventoryHistory(); await renderAdmin(); await renderArchived();
+    sizeInventoryCache=null; await renderSizeInventory({refresh:true}); await renderInventoryHistory(); await renderAdmin(); await renderArchived();
     alert(`Se archivó la talla ${row.talla}. Ya aparece en Productos archivados.`);
   }catch(error){console.error(error);alert("No se pudo archivar la talla: "+error.message);}
 }
@@ -894,13 +936,13 @@ async function sizeStockAction(id,action){
   const movementType=action==='venta'?'venta':action==='entrada'?'entrada':action==='correccion'?'correccion':'ajuste';
   const {error:log}=await supabaseClient.from('inventario_movimientos').insert({producto_id:r.producto_id,producto_nombre:(r.productos?.nombre||'Producto')+' · talla '+r.talla,tipo:movementType,cantidad:action==='venta'?-qty:qty,stock_anterior:Number(r.stock),stock_nuevo:next,motivo:motivo.trim()});
   if(log)console.warn('Movimiento no guardado',log.message);
-  await renderSizeInventory();await renderInventoryHistory();
+  sizeInventoryCache=null; await renderSizeInventory({refresh:true}); await renderInventoryHistory();
   if(action==='correccion')alert('Corrección guardada. Se actualizaron stock y vendidas para esta talla; revisa los valores en inventario.');
  }catch(e){alert('No se pudo actualizar la talla: '+e.message);}
 }
 
 async function renderInventory(){
-  await renderSizeInventory();
+  await renderSizeInventory({refresh:true});
 }
 
 async function renderArchived(){
@@ -974,8 +1016,8 @@ async function changeProductStock(id,type){
       alert(logError.message);
     }
     await renderAdmin();
-    await renderInventory();
-    await renderArchived();
+    if(!$("inventoryView")?.classList.contains("hidden")) await renderInventory();
+    if(!$("archivedView")?.classList.contains("hidden")) await renderArchived();
   }catch(error){ console.error(error); alert("No se pudo actualizar la existencia: "+error.message); }
 }
 
@@ -991,8 +1033,8 @@ async function permanentlyDeleteProduct(id){
     const {error:productError}=await supabaseClient.from("productos").delete().eq("id",id).eq("activo",false);
     if(productError) throw new Error("No se pudo eliminar el producto: "+productError.message);
     await renderAdmin();
-    await renderInventory();
-    await renderArchived();
+    if(!$("inventoryView")?.classList.contains("hidden")) await renderInventory();
+    if(!$("archivedView")?.classList.contains("hidden")) await renderArchived();
     alert("Producto eliminado definitivamente. El historial de movimientos se conservó.");
   }catch(error){
     console.error(error);
@@ -1009,7 +1051,9 @@ async function restoreProduct(id){
     if(error) throw error;
     try{ await logInventoryMovement({product,type:"recuperacion",quantity:0,before:product.stock,after:product.stock,reason:"Producto recuperado del archivo"}); }
     catch(logError){ alert(logError.message); }
-    await renderAdmin(); await renderInventory(); await renderArchived();
+    await renderAdmin();
+    if(!$("inventoryView")?.classList.contains("hidden")) await renderInventory();
+    if(!$("archivedView")?.classList.contains("hidden")) await renderArchived();
     alert("Producto recuperado. Si tiene existencia mayor que cero, volverá a aparecer en el catálogo.");
   }catch(error){ console.error(error); alert("No se pudo recuperar el producto: "+error.message); }
 }
@@ -1077,8 +1121,12 @@ document.querySelectorAll(".admin-menu > button").forEach(b => {
 });
 
 // Búsquedas y actualización manual de inventario.
-$("inventorySearch")?.addEventListener("input", renderInventory);
-$("archivedSearch")?.addEventListener("input", renderArchived);
+$("inventorySearch")?.addEventListener("input", () => renderSizeInventory());
+let archivedSearchTimer = null;
+$("archivedSearch")?.addEventListener("input", () => {
+  clearTimeout(archivedSearchTimer);
+  archivedSearchTimer = setTimeout(() => renderArchived(), 250);
+});
 $("refreshInventoryHistory")?.addEventListener("click", renderInventoryHistory);
 
 // Al cargar el administrador, solo Productos queda seleccionado.
@@ -1086,4 +1134,8 @@ $("categoriesView")?.classList.add("hidden");
 $("inventoryView")?.classList.add("hidden");
 $("archivedView")?.classList.add("hidden");
 
-renderAdmin();
+// Evita consultar productos antes de validar/restaurar la sesión.
+if($("loginScreen")?.style.display === "none") {
+  renderAdmin();
+  window.__jsAdminInitialLoadStarted = true;
+}
