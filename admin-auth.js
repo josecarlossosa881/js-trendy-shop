@@ -23,11 +23,17 @@ function showLoginMessage(message, type = "error") {
   loginMessage.textContent = message;
 }
 
+let adminInitialLoadStarted = !!window.__jsAdminInitialLoadStarted;
 function showPanel(user) {
   loginScreen.style.display = "none";
   adminPanel.style.display = "block";
   adminUser.textContent = user?.email || "";
-  if (typeof renderAdmin === "function") renderAdmin();
+  // Una sola carga inicial por página; la recarga manual sigue disponible.
+  if (!adminInitialLoadStarted && typeof renderAdmin === "function") {
+    adminInitialLoadStarted = true;
+    window.__jsAdminInitialLoadStarted = true;
+    renderAdmin();
+  }
 }
 
 function showLogin() {
