@@ -2640,3 +2640,9 @@ body.detail-scroll-locked {
 }
 
 body.detail-scroll-locked > .nav { visibility: hidden !important; pointer-events: none !important; }
+
+
+/* Optimización de carga de imágenes: conserva tamaños y recortes actuales. */
+.catalog-product-card .pic img, .offer-product-card .pic img { opacity: 0; transition: opacity .16s ease; }
+.catalog-product-card .pic img.image-loaded, .offer-product-card .pic img.image-loaded { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .catalog-product-card .pic img, .offer-product-card .pic img { transition: none; } }
