@@ -1,6 +1,28 @@
 const SUPABASE_URL = "https://fafryvpzvewbwjgznzsg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_l4iQHwmQpCOPnoe7JBcK4w_soduEaIy";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+window.supabaseClient = supabaseClient;
+
+
+
+// ===== Estadísticas anónimas de JS Trendy Shop =====
+const JS_ANALYTICS_TABLE = "tienda_analytics_eventos";
+function analyticsId(key){
+  try { let v=localStorage.getItem(key); if(!v){v=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2));localStorage.setItem(key,v);} return v; }
+  catch(_){ return (crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2)); }
+}
+const jsAnalyticsVisitorId=analyticsId("jsTrendyAnalyticsVisitor");
+function jsAnalyticsSessionId(){
+  try { let v=sessionStorage.getItem("jsTrendyAnalyticsSession"); if(!v){v=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(36).slice(2));sessionStorage.setItem("jsTrendyAnalyticsSession",v);} return v; }
+  catch(_){ return analyticsId("jsTrendyAnalyticsSessionFallback"); }
+}
+let jsAnalyticsLastRoute="";
+function trackShopEvent(tipo, pagina, ruta, product=null){
+  if(!window.supabase || !window.supabase.createClient || !window.supabaseClient) return;
+  const payload={tipo,pagina:String(pagina||"Tienda").slice(0,120),ruta:String(ruta||"/").slice(0,180),visitor_id:jsAnalyticsVisitorId,session_id:jsAnalyticsSessionId(),producto_id:product?.id??null,producto_nombre:product?.name?String(product.name).slice(0,180):null};
+  window.supabaseClient.from(JS_ANALYTICS_TABLE).insert(payload).then(({error})=>{if(error) console.warn("No se pudo guardar la estadística de la tienda:",error.message);}).catch(e=>console.warn("Estadísticas no disponibles:",e.message));
+}
+function trackShopPage(){const route=location.hash||"/";if(route===jsAnalyticsLastRoute)return;jsAnalyticsLastRoute=route;const labels={"#inicio":"Inicio","#categorias":"Categorías","#catalogo":"Catálogo","#ofertas":"Ofertas"};trackShopEvent("pagina",labels[route]||"Tienda",route);}
 
 function money(n){ return n ? "$" + Number(n).toLocaleString("es-MX") : "Consultar"; }
 function offerPriceMarkup(p, cls="") {
@@ -32,23 +54,6 @@ function fromDb(row){
     stock: Number(row.stock) || 0
   };
 }
-
-
-// Estadísticas anónimas: identificador aleatorio del navegador y sesión de pestaña.
-// No se envían nombres, correo, teléfono ni dirección IP desde el código de la tienda.
-function analyticsId(storage,key){
-  try{let value=storage.getItem(key);if(!value){value=(crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`);storage.setItem(key,value)}return value}catch(_){return (crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`)}
-}
-const shopAnalyticsVisitorId=analyticsId(localStorage,'jsShopAnalyticsVisitor');
-const shopAnalyticsSessionId=analyticsId(sessionStorage,'jsShopAnalyticsSession');
-async function trackShopEvent(tipo,pagina,product=null){
-  try{
-    const payload={tipo, pagina:String(pagina||'Tienda').slice(0,120), visitor_id:shopAnalyticsVisitorId, session_id:shopAnalyticsSessionId, producto_id:product?.id??null, producto_nombre:product?.name?String(product.name).slice(0,180):null, ruta:(location.pathname||'/').slice(0,180)};
-    const {error}=await supabaseClient.from('tienda_analytics_eventos').insert(payload);
-    if(error) console.warn('No se pudo guardar la estadística:',error.message);
-  }catch(error){console.warn('No se pudo registrar el evento de estadísticas.',error)}
-}
-function trackShopPage(page){trackShopEvent('pagina',page)}
 
 let products = [];
 let activeCategory = "Todos";
@@ -602,7 +607,7 @@ async function openDetail(id){
   detailQuantity=1;
   const p=products.find(x=>String(x.id)===String(id));
   if(!p)return;
-  trackShopEvent('producto','Producto: '+p.name,p);
+  trackShopEvent("producto", "Producto", `#producto-${p.id}`, p);
   const sizes=sizesForProduct(p);
   if(sizes.length) await refreshSizeInventory();
   const available=sizes.length?Math.max(0,sizes.reduce((sum,size)=>sum+sizeStockFor(p.id,size),0)):Math.max(0,Number(p.stock)||0);
@@ -752,9 +757,9 @@ function setupSectionNavigation(){
 }
 
 async function startStore(){
-  trackShopPage('Inicio');
-  document.querySelectorAll('.nav nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{const label=(link.textContent||'Página').trim();trackShopPage(label)}));
   if(!document.getElementById("products"))return;
+  trackShopPage();
+  window.addEventListener("hashchange",trackShopPage);
   setupSectionNavigation();
   document.getElementById("search").oninput=renderStore;
   // En móvil, la lupa abre el buscador dentro del catálogo; en escritorio
