@@ -341,6 +341,7 @@
       <aside class="admin-menu">
         <button class="active" data-view="products">🛍️ Productos</button>
         <button data-view="inventory">📦 Inventario</button>
+        <button data-view="analytics">📊 Estadísticas</button>
         <button data-view="archived">🗃️ Archivados</button>
         <button data-view="categories" data-category-panel="list">🏷️ Categorías</button>
         <button data-view="add-category" data-category-panel="add-category">➕ Agregar categoría</button>
@@ -366,6 +367,16 @@
           <p class="hint">Consulta producto, tallas y existencia actual. Las entradas y ajustes quedan registrados en el historial.</p>
           <label style="display:block;margin:15px 0"><input id="inventorySearch" class="search" style="width:100%" placeholder="Buscar producto, marca, categoría o talla..."></label>
           <div class="size-inventory-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 4px 14px"><div><h2 style="margin:0 0 5px">Inventario por talla</h2><p class="hint" style="margin:0">Cada fila representa una talla. Las acciones afectan únicamente esa talla.</p></div><button id="refreshSizeInventory" class="secondary" type="button">Actualizar</button></div><div id="sizeInventoryTable" class="size-inventory-scroll"></div></div>
+        </div>
+
+        <div id="analyticsView" class="hidden">
+          <p class="kicker">ACTIVIDAD DE LA TIENDA</p>
+          <h1>Estadísticas</h1>
+          <p class="hint">Consulta visitas, visitantes aproximados, sesiones y los productos más vistos. No se recopilan nombres ni datos personales de los visitantes.</p>
+          <div class="analytics-toolbar"><label>Periodo <select id="analyticsRange" class="search"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option></select></label><button id="refreshAnalytics" class="secondary" type="button">Actualizar estadísticas</button></div>
+          <p id="analyticsStatus" class="hint" role="status">Las estadísticas aparecerán aquí después de configurar Supabase.</p>
+          <div id="analyticsSummary" class="analytics-summary"></div>
+          <div class="analytics-columns"><section class="analytics-card"><h2>Páginas más visitadas</h2><div id="analyticsPages"></div></section><section class="analytics-card"><h2>Productos más vistos</h2><div id="analyticsProducts"></div></section></div>
         </div>
 
         <div id="archivedView" class="hidden">
@@ -538,6 +549,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="admin-auth.js?v=20261014-optimizacion-movil-v1"></script>
-  <script src="admin.js?v=20261014-optimizacion-movil-v1"></script>
+  <script src="admin.js?v=20261018-analytics-v1"></script>
 </body>
 </html>
