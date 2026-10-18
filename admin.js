@@ -476,43 +476,6 @@ function renderImage(url, name){
     : "";
 }
 
-
-// ===== Estadísticas de la tienda =====
-function analyticsDateRange(days){
-  const start=new Date(); start.setDate(start.getDate()-days); start.setHours(0,0,0,0); return start.toISOString();
-}
-function analyticsNumber(n){ return (Number(n)||0).toLocaleString('es-MX'); }
-async function renderAnalytics(){
-  const status=$('analyticsStatus'), summary=$('analyticsSummary'), pages=$('analyticsPages'), products=$('analyticsProducts');
-  if(!summary || !pages || !products) return;
-  if(status) status.textContent='Cargando estadísticas…';
-  const days=Math.max(1,Number($('analyticsRange')?.value)||30);
-  try{
-    const since=analyticsDateRange(days);
-    const {data,error}=await supabaseClient.from('tienda_analytics_eventos').select('tipo,visitor_id,session_id,pagina,producto_id,producto_nombre,created_at').gte('created_at',since).order('created_at',{ascending:false}).limit(10000);
-    if(error) throw error;
-    const rows=data||[];
-    const pageViews=rows.filter(r=>r.tipo==='pagina');
-    const productViews=rows.filter(r=>r.tipo==='producto');
-    const visitors=new Set(rows.map(r=>r.visitor_id).filter(Boolean));
-    const sessions=new Set(rows.map(r=>r.session_id).filter(Boolean));
-    const cards=[['Visitas a páginas',pageViews.length],['Visitantes únicos aprox.',visitors.size],['Sesiones',sessions.size],['Vistas de productos',productViews.length]];
-    summary.innerHTML=cards.map(([label,value])=>`<div class="analytics-stat"><span>${label}</span><strong>${analyticsNumber(value)}</strong></div>`).join('');
-    const pageMap=new Map();
-    pageViews.forEach(r=>{const key=r.pagina||'Página sin nombre';pageMap.set(key,(pageMap.get(key)||0)+1)});
-    const topPages=[...pageMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
-    pages.innerHTML=topPages.length?`<div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Página</th><th>Visitas</th></tr></thead><tbody>${topPages.map(([name,count])=>`<tr><td>${escapeVisualHtml(name)}</td><td>${analyticsNumber(count)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="hint">Todavía no hay visitas registradas en este periodo.</p>';
-    const productMap=new Map();
-    productViews.forEach(r=>{const key=String(r.producto_id||r.producto_nombre||'unknown');const item=productMap.get(key)||{name:r.producto_nombre||'Producto',count:0,last:r.created_at};item.count++;if(!item.last||r.created_at>item.last)item.last=r.created_at;productMap.set(key,item)});
-    const topProducts=[...productMap.entries()].sort((a,b)=>b[1].count-a[1].count).slice(0,20);
-    products.innerHTML=topProducts.length?`<div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Producto</th><th>Vistas</th><th>Última vista</th></tr></thead><tbody>${topProducts.map(([id,p])=>`<tr><td>${escapeVisualHtml(p.name)}</td><td>${analyticsNumber(p.count)}</td><td>${p.last?new Date(p.last).toLocaleString('es-MX'): '—'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="hint">Aún no se han registrado aperturas de productos en este periodo.</p>';
-    if(status) status.textContent=`Periodo: últimos ${days} días. Datos actualizados: ${new Date().toLocaleString('es-MX')}.`;
-  }catch(error){
-    if(status) status.textContent='No se pudieron cargar las estadísticas. Verifica que hayas ejecutado tienda_analytics.sql en Supabase y que la sesión de administrador tenga permisos. '+(error.message||'');
-    summary.innerHTML=''; pages.innerHTML=''; products.innerHTML='';
-  }
-}
-
 async function renderAdmin(){
   try{
     const ps = (await getProducts()).filter(p => p.activo);
@@ -1141,7 +1104,7 @@ document.querySelectorAll(".admin-menu > button").forEach(b => {
 
     b.classList.add("active");
 
-    ["products","categories","settings","inventory","archived","analytics"].forEach(v =>
+    ["products","categories","settings","inventory","archived"].forEach(v =>
       $(v + "View")?.classList.add("hidden")
     );
 
@@ -1153,7 +1116,6 @@ document.querySelectorAll(".admin-menu > button").forEach(b => {
       $(b.dataset.view + "View")?.classList.remove("hidden");
       if(b.dataset.view === "inventory") renderInventory();
       if(b.dataset.view === "archived") renderArchived();
-      if(b.dataset.view === "analytics") renderAnalytics();
     }
   };
 });
@@ -1171,12 +1133,41 @@ $("refreshInventoryHistory")?.addEventListener("click", renderInventoryHistory);
 $("categoriesView")?.classList.add("hidden");
 $("inventoryView")?.classList.add("hidden");
 $("archivedView")?.classList.add("hidden");
-$("analyticsView")?.classList.add("hidden");
-$("analyticsRange")?.addEventListener("change", renderAnalytics);
-$("refreshAnalytics")?.addEventListener("click", renderAnalytics);
 
 // Evita consultar productos antes de validar/restaurar la sesión.
 if($("loginScreen")?.style.display === "none") {
   renderAdmin();
   window.__jsAdminInitialLoadStarted = true;
 }
+
+
+// ===== Panel de estadísticas =====
+let jsAnalyticsDays=7;
+function analyticsEscape(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+async function renderAnalytics(days=jsAnalyticsDays){
+  jsAnalyticsDays=Number(days)||7;
+  const summary=$("analyticsSummary"), pages=$("analyticsPages"), products=$("analyticsProducts");
+  if(summary) summary.innerHTML='<div class="card">Cargando…</div>';
+  const since=new Date(Date.now()-jsAnalyticsDays*86400000).toISOString();
+  try{
+    const {data,error}=await supabaseClient.from("tienda_analytics_eventos").select("tipo,pagina,ruta,visitor_id,session_id,producto_id,producto_nombre,created_at").gte("created_at",since).order("created_at",{ascending:false}).limit(10000);
+    if(error) throw error; const rows=data||[]; const pageRows=rows.filter(x=>x.tipo==="pagina"); const productRows=rows.filter(x=>x.tipo==="producto");
+    const uniqueVisitors=new Set(rows.map(x=>x.visitor_id).filter(Boolean)).size; const sessions=new Set(rows.map(x=>x.session_id).filter(Boolean)).size;
+    if(summary) summary.innerHTML=[["Visitas a páginas","↗",pageRows.length,"Personas que abrieron secciones"],["Visitantes aproximados","◉",uniqueVisitors,"Navegadores únicos estimados"],["Sesiones","◷",sessions,"Visitas agrupadas por sesión"],["Vistas de productos","☆",productRows.length,"Aperturas de detalles de producto"]].map(([label,icon,value,desc])=>`<div class="analytics-stat"><div class="analytics-stat-top"><span>${label}</span><i>${icon}</i></div><div class="analytics-stat-value">${value.toLocaleString("es-MX")}</div><small>${desc}</small></div>`).join("");
+    const pageCounts={}; pageRows.forEach(r=>{const key=r.pagina||r.ruta||"Tienda";pageCounts[key]=(pageCounts[key]||0)+1;});
+    if(pages) pages.innerHTML=Object.entries(pageCounts).sort((a,b)=>b[1]-a[1]).map(([name,count])=>`<div class="admin-item"><div class="grow"><b>${analyticsEscape(name)}</b></div><strong>${count} visitas</strong></div>`).join("")||'<div class="empty">Todavía no hay visitas registradas en este periodo.</div>';
+    const productCounts={}; productRows.forEach(r=>{const key=String(r.producto_id??r.producto_nombre??"sin-id");if(!productCounts[key])productCounts[key]={name:r.producto_nombre||"Producto",count:0,last:r.created_at,id:r.producto_id};productCounts[key].count++;if(new Date(r.created_at)>new Date(productCounts[key].last))productCounts[key].last=r.created_at;});
+    if(products) products.innerHTML=Object.values(productCounts).sort((a,b)=>b.count-a.count).slice(0,100).map(p=>`<div class="admin-item"><div class="grow"><b>${analyticsEscape(p.name)}</b><br><small>${p.last?"Última vista: "+new Date(p.last).toLocaleString("es-MX"):""}</small></div><strong>${p.count} vistas</strong></div>`).join("")||'<div class="empty">Todavía no hay productos vistos en este periodo.</div>';
+  }catch(error){const msg=`No se pudieron cargar las estadísticas. Ejecuta tienda_analytics.sql en Supabase y revisa los permisos. Detalle: ${analyticsEscape(error.message)}`;if(summary)summary.innerHTML=`<div class="empty" style="grid-column:1/-1">${msg}</div>`;if(pages)pages.innerHTML="";if(products)products.innerHTML="";}
+}
+(function setupAnalyticsNavigation(){
+  const viewIds=["productsView","inventoryView","archivedView","categoriesView","analyticsView","settingsView"];
+  document.querySelectorAll(".admin-menu [data-view]").forEach(button=>button.addEventListener("click",()=>{
+    const target=button.dataset.view; if(target==="add-category"||target==="add-brand")return;
+    viewIds.forEach(id=>$(id)?.classList.toggle("hidden",id!==({products:"productsView",inventory:"inventoryView",archived:"archivedView",categories:"categoriesView",analytics:"analyticsView",settings:"settingsView"}[target])));
+    document.querySelectorAll(".admin-menu [data-view]").forEach(b=>b.classList.toggle("active",b===button));
+    if(target==="analytics")renderAnalytics(jsAnalyticsDays);
+  }));
+  document.querySelectorAll("[data-analytics-days]").forEach(button=>button.addEventListener("click",()=>renderAnalytics(button.dataset.analyticsDays)));
+  $("refreshAnalytics")?.addEventListener("click",()=>renderAnalytics(jsAnalyticsDays));
+})();
