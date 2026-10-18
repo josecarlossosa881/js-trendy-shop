@@ -860,7 +860,7 @@ async function archiveProductSize(sizeRowId, productId){
   try{
     const {data:row,error:rowError}=await supabaseClient.from("inventario_tallas").select("id,producto_id,talla,stock,vendidas").eq("id",sizeRowId).single();
     if(rowError) throw rowError;
-    const {data:product,error:productError}=await supabaseClient.from("productos").select("id,nombre,talla,stock").eq("id",productId).single();
+    const {data:product,error:productError}=await supabaseClient.from("productos").select("id,nombre,talla,stock,activo").eq("id",productId).single();
     if(productError) throw productError;
     if(String(row.producto_id)!==String(product.id)) throw new Error("La talla seleccionada no corresponde a este producto.");
     const sizes=String(product.talla||"").split(/[,/|]+/).map(x=>x.trim()).filter(Boolean);
@@ -870,7 +870,11 @@ async function archiveProductSize(sizeRowId, productId){
     // Guardar primero una copia recuperable de la talla antes de quitarla del catálogo.
     const {error:saveError}=await supabaseClient.from("tallas_archivadas").insert({producto_id:String(productId),producto_nombre:product.nombre||"Producto",talla:String(row.talla),stock:Number(row.stock)||0,vendidas:Number(row.vendidas)||0});
     if(saveError) throw new Error("No se pudo guardar la talla en Archivados. Ejecuta primero el SQL incluido. Detalle: "+saveError.message);
-    const {error:updateError}=await supabaseClient.from("productos").update({talla:remaining.join(", ")}).eq("id",productId);
+    const productUpdate = {talla:remaining.join(", ")};
+    // Si se archivó la última talla, desactivar también el producto para que
+    // loadProducts() del catálogo público ya no lo incluya.
+    if(remaining.length===0) productUpdate.activo=false;
+    const {error:updateError}=await supabaseClient.from("productos").update(productUpdate).eq("id",productId);
     if(updateError){
       await supabaseClient.from("tallas_archivadas").delete().eq("producto_id",String(productId)).eq("talla",String(row.talla));
       throw updateError;
@@ -885,11 +889,11 @@ async function archiveProductSize(sizeRowId, productId){
 async function restoreArchivedSize(id){
   try{
     const {data:r,error}=await supabaseClient.from("tallas_archivadas").select("*").eq("id",id).single(); if(error)throw error;
-    const {data:p,error:pe}=await supabaseClient.from("productos").select("id,nombre,talla").eq("id",r.producto_id).single(); if(pe)throw pe;
+    const {data:p,error:pe}=await supabaseClient.from("productos").select("id,nombre,talla,activo").eq("id",r.producto_id).single(); if(pe)throw pe;
     if(!confirm(`¿Recuperar la talla ${r.talla} de “${p.nombre}”?`))return;
     const sizes=String(p.talla||"").split(/[,/|]+/).map(x=>x.trim()).filter(Boolean);
     if(!sizes.some(x=>x.toLowerCase()===String(r.talla).toLowerCase())) sizes.push(String(r.talla));
-    const {error:up}=await supabaseClient.from("productos").update({talla:sizes.join(", ")}).eq("id",p.id); if(up)throw up;
+    const {error:up}=await supabaseClient.from("productos").update({talla:sizes.join(", "),activo:true}).eq("id",p.id); if(up)throw up;
     const {error:del}=await supabaseClient.from("tallas_archivadas").delete().eq("id",id); if(del)throw del;
     await renderArchived(); await renderAdmin(); await renderInventory();
     alert(`Talla ${r.talla} recuperada.`);
