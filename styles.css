@@ -2698,3 +2698,26 @@ body.detail-scroll-locked > .nav { visibility: hidden !important; pointer-events
 .detail-thumbnail.active{border:2px solid #b99a42;box-shadow:0 0 0 2px #f7efd9}
 .detail-gallery-count{margin:8px 0 0!important;font-size:12px!important;color:#87733b!important}
 @media(max-width:700px){.detail-thumbnails{gap:8px}.detail-thumbnail{width:62px;height:62px}.product-image-preview-item{width:82px}.product-image-preview-item img{width:82px;height:82px}}
+
+
+/* ===== Catálogo compacto SOLO en computadora: más productos por fila, sin alterar móvil ===== */
+@media (min-width: 1000px) {
+  .catalog-section { padding-left: clamp(22px, 3.2vw, 54px) !important; padding-right: clamp(22px, 3.2vw, 54px) !important; }
+  .catalog-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 16px !important; align-items: stretch; }
+  .catalog-grid .product { min-width: 0; display: flex; flex-direction: column; height: 100%; }
+  .catalog-grid .pic { height: clamp(150px, 14vw, 205px) !important; min-height: 0 !important; flex: 0 0 auto; }
+  .catalog-grid .pic img { padding: 7px !important; object-fit: contain !important; }
+  .catalog-grid .product-body { display: flex; flex: 1 1 auto; flex-direction: column; padding: 10px 11px 11px !important; min-width: 0; }
+  .catalog-grid .product h3 { font-size: clamp(12px, 1vw, 14px) !important; line-height: 1.25 !important; margin: 4px 0 6px !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .catalog-grid .tag { font-size: 8px !important; margin-bottom: 4px !important; }
+  .catalog-grid .model-line { font-size: 10px !important; line-height: 1.25 !important; margin-bottom: 4px !important; }
+  .catalog-grid .size-list { margin-top: 5px !important; gap: 4px !important; }
+  .catalog-grid .product-bottom { margin-top: auto !important; padding-top: 9px; }
+  .catalog-grid .price { font-size: 17px !important; }
+  .catalog-grid .catalog-add, .catalog-grid .product-actions button { min-height: 36px; font-size: 11px; }
+}
+@media (min-width: 1400px) {
+  .catalog-section { padding-left: 48px !important; padding-right: 48px !important; }
+  .catalog-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 19px !important; }
+  .catalog-grid .pic { height: 205px !important; }
+}
