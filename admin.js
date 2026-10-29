@@ -324,6 +324,7 @@ function uiProduct(row){
     desc: row.descripcion || "",
     offer: !!row.oferta,
     image: row.imagen || "",
+    images: Array.isArray(row.imagenes) ? row.imagenes.filter(Boolean).slice(0,3) : (row.imagen ? [row.imagen] : []),
     talla: row.talla || "",
     stock: Number(row.stock) || 0,
     activo: row.activo !== false
@@ -333,7 +334,7 @@ function uiProduct(row){
 async function getProducts(){
   const { data, error } = await supabaseClient
     .from("productos")
-     .select("id,nombre,precio,precio_anterior,categoria,marca,modelo,subcategoria,descripcion,oferta,imagen,talla,stock,activo")
+     .select("id,nombre,precio,precio_anterior,categoria,marca,modelo,subcategoria,descripcion,oferta,imagen,imagenes,talla,stock,activo")
     .order("id", { ascending: false });
 
   if(error) throw new Error(error.message);
@@ -513,13 +514,11 @@ async function fillCats(selected = ""){
   if(!cs.length) $("pCat").innerHTML = `<option value="">Sin categoría</option>`;
 }
 
-function showPreview(url){
+function showPreview(urls){
   const preview = $("pImagePreview");
-  if(url){
-    preview.innerHTML = `<img src="${url}" alt="Vista previa">`;
-  }else{
-    preview.textContent = "Sin imagen";
-  }
+  const list = (Array.isArray(urls) ? urls : [urls]).filter(Boolean).slice(0,3);
+  if(!list.length){ preview.innerHTML = '<span class="hint">Sin imágenes</span>'; return; }
+  preview.innerHTML = list.map((url,i)=>`<div class="product-image-preview-item"><img src="${String(url).replaceAll('"','&quot;')}" alt="Vista ${i+1}"><small>${i===0?'Principal':`Foto ${i+1}`}</small></div>`).join("");
 }
 
 function publicImageUrl(path){
@@ -589,6 +588,7 @@ async function openModal(id = null){
   $("modalTitle").textContent = id ? "Editar producto" : "Agregar producto";
   $("uploadStatus").textContent = "";
   $("pImage").value = "";
+  $("pImage").dataset.currentUrls = "[]";
 
   let p = null;
 
@@ -621,9 +621,9 @@ async function openModal(id = null){
   $("pStock").value = p?.stock ?? 1;
   $("pDesc").value = p?.desc || "";
   $("pOffer").checked = !!p?.offer;
-  $("pImage").dataset.currentUrl = p?.image || "";
-
-  showPreview(p?.image || "");
+  const currentImages = (p?.images?.length ? p.images : (p?.image ? [p.image] : [])).slice(0,3);
+  $("pImage").dataset.currentUrls = JSON.stringify(currentImages);
+  showPreview(currentImages);
 
   const hasSizes = !!(p?.talla || "").trim();
   $("pHasSizes").checked = hasSizes;
@@ -648,15 +648,19 @@ $("modalClose").onclick = () => {
 };
 
 $("pImage").addEventListener("change", () => {
-  const file = $("pImage").files[0];
-  if(!file){
-    showPreview($("pImage").dataset.currentUrl || "");
+  const files = Array.from($("pImage").files || []);
+  if(files.length > 3){
+    alert("Puedes seleccionar máximo 3 imágenes por producto.");
+    $("pImage").value = "";
+    showPreview(JSON.parse($("pImage").dataset.currentUrls || "[]"));
     return;
   }
-
-  const previewUrl = URL.createObjectURL(file);
-  showPreview(previewUrl);
-  $("uploadStatus").textContent = "La imagen se subirá al guardar el producto.";
+  if(!files.length){
+    showPreview(JSON.parse($("pImage").dataset.currentUrls || "[]"));
+    return;
+  }
+  showPreview(files.map(file=>URL.createObjectURL(file)));
+  $("uploadStatus").textContent = `Se subirán ${files.length} imagen(es) al guardar. Al editar, reemplazarán las fotos actuales.`;
 });
 
 $("saveProduct").onclick = async () => {
@@ -672,26 +676,29 @@ $("saveProduct").onclick = async () => {
   button.textContent = "Guardando...";
   $("uploadStatus").textContent = "";
 
-  let uploadedImage = null;
-  let oldImageUrl = "";
+  const uploadedImages = [];
+  let oldImageUrls = [];
 
   try{
     if(editingId){
       const { data, error } = await supabaseClient
         .from("productos")
-        .select("imagen")
+        .select("imagen,imagenes")
         .eq("id", editingId)
         .single();
 
       if(error) throw error;
-      oldImageUrl = data?.imagen || "";
+      oldImageUrls = Array.from(new Set([...(Array.isArray(data?.imagenes) ? data.imagenes : []), data?.imagen].filter(Boolean)));
     }
 
-    const file = $("pImage").files[0];
-
-    if(file){
-      $("uploadStatus").textContent = "Subiendo imagen...";
-      uploadedImage = await uploadProductImage(file);
+    const files = Array.from($("pImage").files || []);
+    if(files.length > 3) throw new Error("Puedes subir máximo 3 imágenes por producto.");
+    if(files.length){
+      for(let i=0;i<files.length;i++){
+        $("uploadStatus").textContent = `Subiendo imagen ${i+1} de ${files.length}...`;
+        const uploaded = await uploadProductImage(files[i]);
+        if(uploaded) uploadedImages.push(uploaded);
+      }
     }
 
     const product = {
@@ -708,8 +715,17 @@ $("saveProduct").onclick = async () => {
       oferta: $("pOffer").checked
     };
 
-    if(uploadedImage){
-      product.imagen = uploadedImage.url;
+    const selectedUrls = uploadedImages.map(item=>item.url);
+    if(selectedUrls.length){
+      product.imagen = selectedUrls[0];
+      product.imagenes = selectedUrls;
+    } else if(editingId){
+      const currentUrls = JSON.parse($("pImage").dataset.currentUrls || "[]");
+      product.imagen = currentUrls[0] || "";
+      product.imagenes = currentUrls;
+    } else {
+      product.imagen = "";
+      product.imagenes = [];
     }
 
     if(editingId){
@@ -719,24 +735,20 @@ $("saveProduct").onclick = async () => {
         .eq("id", editingId);
 
       if(error){
-        if(uploadedImage) await deleteStorageImage(uploadedImage.url);
+        for(const item of uploadedImages) await deleteStorageImage(item.url);
         throw error;
       }
 
-      if(uploadedImage && oldImageUrl){
-        await deleteStorageImage(oldImageUrl);
+      if(uploadedImages.length){
+        for(const oldUrl of oldImageUrls) if(!selectedUrls.includes(oldUrl)) await deleteStorageImage(oldUrl);
       }
     }else{
-      if(!uploadedImage){
-        product.imagen = "";
-      }
-
       const { error } = await supabaseClient
         .from("productos")
         .insert(product);
 
       if(error){
-        if(uploadedImage) await deleteStorageImage(uploadedImage.url);
+        for(const item of uploadedImages) await deleteStorageImage(item.url);
         throw error;
       }
     }
