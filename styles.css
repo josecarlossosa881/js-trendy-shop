@@ -2685,3 +2685,16 @@ body.detail-scroll-locked > .nav { visibility: hidden !important; pointer-events
 .analytics-footnote{font-size:11px;color:#8a867d;text-align:center;margin:18px 0 0}
 @media(max-width:900px){.analytics-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-hero{padding:23px}}
 @media(max-width:600px){.analytics-view{padding-bottom:18px}.analytics-hero{padding:20px;border-radius:16px;margin-bottom:14px}.analytics-hero-icon{width:48px;height:48px;flex-basis:48px;border-radius:15px;font-size:30px}.analytics-hero h1{font-size:25px}.analytics-hero p:not(.kicker){font-size:12px}.analytics-toolbar{padding:13px;border-radius:13px;align-items:stretch}.analytics-toolbar>div{width:100%}.analytics-periods button{flex:1 1 auto;padding:9px 11px!important;font-size:12px}.analytics-refresh{width:100%}.analytics-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:22px}.analytics-stat{padding:13px;border-radius:13px}.analytics-stat-top{font-size:11px;align-items:flex-start}.analytics-stat-top i{width:28px;height:28px;font-size:16px;flex:0 0 28px}.analytics-stat-value{font-size:27px;margin:12px 0 5px}.analytics-stat small{font-size:10px}.analytics-section-heading h2{font-size:18px}.analytics-panel{padding:5px 12px!important}.analytics-panel .admin-item{align-items:flex-start}.analytics-panel .admin-item strong{font-size:11px;padding:6px 8px}}
+
+
+/* Galería de hasta tres fotos por producto */
+.product-images-preview{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.product-image-preview-item{width:94px;display:flex;flex-direction:column;gap:5px;align-items:center;color:#76642d;font-size:11px}
+.product-image-preview-item img{width:94px;height:94px;object-fit:contain;background:#fff;border:1px solid #e7dfce;border-radius:10px;padding:4px}
+.detail-gallery{min-width:0}
+.detail-thumbnails{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.detail-thumbnail{width:68px;height:68px;padding:4px;border:1px solid #e4dfd6;border-radius:9px;background:#fff;cursor:pointer;overflow:hidden}
+.detail-thumbnail img{width:100%;height:100%;object-fit:contain}
+.detail-thumbnail.active{border:2px solid #b99a42;box-shadow:0 0 0 2px #f7efd9}
+.detail-gallery-count{margin:8px 0 0!important;font-size:12px!important;color:#87733b!important}
+@media(max-width:700px){.detail-thumbnails{gap:8px}.detail-thumbnail{width:62px;height:62px}.product-image-preview-item{width:82px}.product-image-preview-item img{width:82px;height:82px}}
