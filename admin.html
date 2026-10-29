@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>JS Trendy Shop | Administrador</title>
-  <link rel="stylesheet" href="styles.css?v=20261018-analytics-v2">
+  <link rel="stylesheet" href="styles.css?v=20261018-gallery-v1">
   <link rel="stylesheet" href="admin-responsive.css?v=20261011-marcas-editar-eliminar-v1">
   <style>
     .auth-screen{min-height:100vh;display:grid;place-items:center;padding:25px;background:#f5f3f1}
@@ -538,9 +538,10 @@
       </label>
 
       <label>
-        Foto del producto
-        <input id="pImage" type="file" accept="image/*">
-        <div id="pImagePreview" class="image-preview">Sin imagen</div>
+        Fotos del producto (máximo 3)
+        <input id="pImage" type="file" accept="image/*" multiple>
+        <span class="hint">Agrega hasta 3 fotos: frente, detalle y otra vista. Si editas el producto y eliges fotos nuevas, reemplazarán las actuales.</span>
+        <div id="pImagePreview" class="product-images-preview"><span class="hint">Sin imágenes</span></div>
         <div id="uploadStatus" class="upload-status"></div>
       </label>
 
@@ -549,7 +550,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin-auth.js?v=20261018-analytics-v2"></script>
-  <script src="admin.js?v=20261018-analytics-v2"></script>
+  <script src="admin-auth.js?v=20261018-gallery-v1"></script>
+  <script src="admin.js?v=20261018-gallery-v1"></script>
 </body>
 </html>
