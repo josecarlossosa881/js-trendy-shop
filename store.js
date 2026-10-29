@@ -50,6 +50,7 @@ function fromDb(row){
     desc: row.descripcion || "",
     offer: !!row.oferta,
     image: row.imagen || "",
+    images: Array.isArray(row.imagenes) ? row.imagenes.filter(Boolean).slice(0,3) : (row.imagen ? [row.imagen] : []),
     talla: row.talla || "",
     stock: Number(row.stock) || 0
   };
@@ -613,12 +614,22 @@ async function openDetail(id){
   const available=sizes.length?Math.max(0,sizes.reduce((sum,size)=>sum+sizeStockFor(p.id,size),0)):Math.max(0,Number(p.stock)||0);
   const sizeControls=sizes.length?`<div class="detail-sizes"><b>Selecciona talla</b><div id="detailSizeButtons" class="detail-size-buttons" role="group" aria-label="Seleccionar talla">${sizes.map(s=>{const stock=sizeStockFor(p.id,s);return `<button type="button" class="detail-size-button" data-size="${esc(s)}" aria-pressed="false" ${stock<=0?'disabled':''}><strong>${esc(s)}</strong><span>${stock} ${stock===1?'disponible':'disponibles'}</span></button>`}).join('')}</div><p id="detailSizeStock" class="stock-note">Selecciona una talla para consultar las piezas disponibles.</p></div>`:'';
   const description=p.desc?`<div class="detail-description-wrap"><h3 class="detail-description-title">Descripción</h3><button type="button" id="detailDescriptionToggle" class="detail-description-toggle" aria-expanded="false" aria-controls="detailDescription">Ver descripción <span aria-hidden="true">＋</span></button><p id="detailDescription" class="detail-description">${esc(p.desc)}</p></div>`:'';
-  document.getElementById("detailContent").innerHTML=`<div class="detail-image">${p.image?`<button type="button" class="detail-image-open" aria-label="Ver imagen completa de ${esc(p.name)}"><img src="${esc(p.image)}" alt="${esc(p.name)}" loading="eager" decoding="async" fetchpriority="high"><span class="detail-image-hint">Toca la imagen para verla completa</span></button>`:'Sin imagen'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}${description}${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad" ${available<=1?'disabled':''}>−</button><input id="detailQuantity" type="number" min="1" max="${available}" value="1" onchange="onDetailQuantityChange(this.value)"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad" ${available<=1?'disabled':''}>+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?'Elige una talla para agregar al carrito':(available>0?`${available} disponibles`:'Actualmente agotado')}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${available<=0?'disabled':''}>Agregar al carrito</button></div>`;
+  const detailImages = (p.images?.length ? p.images : (p.image ? [p.image] : [])).filter(Boolean).slice(0,3);
+  document.getElementById("detailContent").innerHTML=`<div class="detail-gallery">${detailImages.length?`<div class="detail-image" id="detailMainImageWrap"><button type="button" class="detail-image-open" aria-label="Ver imagen completa de ${esc(p.name)}"><img id="detailMainImage" src="${esc(detailImages[0])}" alt="${esc(p.name)} - foto 1" loading="eager" decoding="async" fetchpriority="high"><span class="detail-image-hint">Toca la imagen para verla completa</span></button></div>${detailImages.length>1?`<div class="detail-thumbnails" role="group" aria-label="Más fotos del producto">${detailImages.map((url,i)=>`<button type="button" class="detail-thumbnail ${i===0?'active':''}" data-detail-image-index="${i}" aria-label="Ver foto ${i+1}" aria-pressed="${i===0?'true':'false'}"><img src="${esc(url)}" alt="Miniatura ${i+1}" loading="lazy" decoding="async"></button>`).join('')}</div><p class="detail-gallery-count"><span id="detailImageCounter">1</span> de ${detailImages.length} fotos</p>`:''}`:'<div class="detail-image">Sin imagen</div>'}</div><div class="detail-info"><div class="tag">${esc(p.brand||p.category)}</div><h2>${esc(p.name)}</h2>${p.model?`<p><b>Modelo:</b> ${esc(p.model)}</p>`:''}${description}${sizeControls}<div class="detail-quantity-control"><label for="detailQuantity">Cantidad</label><div class="detail-quantity-buttons"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Disminuir cantidad" ${available<=1?'disabled':''}>−</button><input id="detailQuantity" type="number" min="1" max="${available}" value="1" onchange="onDetailQuantityChange(this.value)"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Aumentar cantidad" ${available<=1?'disabled':''}>+</button></div></div><div class="detail-price">${offerPriceMarkup(p,"detail-offer-price")}</div><p id="detailAvailability" class="stock-note">${sizes.length?'Elige una talla para agregar al carrito':(available>0?`${available} disponibles`:'Actualmente agotado')}</p><button id="detailAddBtn" class="btn full" onclick="addFromDetail()" ${available<=0?'disabled':''}>Agregar al carrito</button></div>`;
   // En móvil, permite abrir la foto en un visor de pantalla completa sin recortarla.
+  let activeDetailImage = 0;
   const detailImageButton=document.querySelector(".detail-image-open");
-  if(detailImageButton){
-    detailImageButton.addEventListener("click",()=>openProductImage(p.image,p.name));
+  const mainDetailImage=document.getElementById("detailMainImage");
+  const detailThumbs=[...document.querySelectorAll(".detail-thumbnail")];
+  function selectDetailImage(index){
+    if(!detailImages.length) return;
+    activeDetailImage=(index+detailImages.length)%detailImages.length;
+    if(mainDetailImage){mainDetailImage.src=detailImages[activeDetailImage];mainDetailImage.alt=`${p.name} - foto ${activeDetailImage+1}`;}
+    detailThumbs.forEach((thumb,i)=>{thumb.classList.toggle("active",i===activeDetailImage);thumb.setAttribute("aria-pressed",i===activeDetailImage?"true":"false");});
+    const counter=document.getElementById("detailImageCounter");if(counter)counter.textContent=String(activeDetailImage+1);
   }
+  detailThumbs.forEach(thumb=>thumb.addEventListener("click",()=>selectDetailImage(Number(thumb.dataset.detailImageIndex)||0)));
+  if(detailImageButton) detailImageButton.addEventListener("click",()=>openProductImage(detailImages[activeDetailImage]||p.image,p.name));
   // En móvil la descripción se muestra bajo demanda; en escritorio permanece visible.
   const descriptionToggle=document.getElementById("detailDescriptionToggle");
   const descriptionText=document.getElementById("detailDescription");
