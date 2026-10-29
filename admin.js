@@ -972,7 +972,16 @@ async function renderArchived(){
     if(sizeError) throw new Error("No se pudieron consultar las tallas archivadas. Ejecuta el SQL incluido. "+sizeError.message);
     const allProducts=products||[];
     const productById=new Map(allProducts.map(p=>[String(p.id),p]));
-    const archivedProducts=allProducts.filter(p=>p.activo===false).filter(p=>[p.nombre,p.marca,p.categoria,p.modelo,p.talla].join(" ").toLowerCase().includes(query)).map(p=>inventoryProductMarkup(p,true)).join("");
+    // Normalizar filas de Supabase al formato que usa inventoryProductMarkup.
+    // Sin esta conversión, los productos archivados desde la vista Productos
+    // aparecían como "undefined" y sin foto porque la BD usa nombre/imagen,
+    // mientras que el componente espera name/image.
+    const archivedProducts=allProducts
+      .filter(p=>p.activo===false)
+      .filter(p=>[p.nombre,p.marca,p.categoria,p.modelo,p.talla].join(" ").toLowerCase().includes(query))
+      .map(row=>uiProduct(row))
+      .map(product=>inventoryProductMarkup(product,true))
+      .join("");
     const archivedSizes=(sizes||[]).filter(r=>{
       const p=productById.get(String(r.producto_id));
       return [r.producto_nombre,r.talla,p?.marca,p?.categoria,p?.modelo].join(" ").toLowerCase().includes(query);
