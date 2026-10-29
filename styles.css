@@ -2721,3 +2721,23 @@ body.detail-scroll-locked > .nav { visibility: hidden !important; pointer-events
   .catalog-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 19px !important; }
   .catalog-grid .pic { height: 205px !important; }
 }
+
+/* Corrección de espacio vertical desperdiciado SOLO en catálogo de escritorio */
+@media (min-width: 1000px) {
+  .catalog-grid {
+    align-items: start !important;
+    grid-auto-rows: max-content !important;
+  }
+  .catalog-grid .product {
+    height: auto !important;
+    align-self: start !important;
+  }
+  .catalog-grid .product-body {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+  }
+  .catalog-grid .product-bottom {
+    margin-top: 8px !important;
+    padding-top: 4px !important;
+  }
+}
