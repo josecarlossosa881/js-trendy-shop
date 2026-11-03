@@ -1,4 +1,5 @@
 let editingId = null;
+let productImageItems = [];
 let editingVisualBrandId = null;
 let editingVisualBrandImage = "";
 let editingVisualCategoryId = null;
@@ -514,11 +515,22 @@ async function fillCats(selected = ""){
   if(!cs.length) $("pCat").innerHTML = `<option value="">Sin categoría</option>`;
 }
 
-function showPreview(urls){
+function showPreview(items){
   const preview = $("pImagePreview");
-  const list = (Array.isArray(urls) ? urls : [urls]).filter(Boolean).slice(0,3);
-  if(!list.length){ preview.innerHTML = '<span class="hint">Sin imágenes</span>'; return; }
-  preview.innerHTML = list.map((url,i)=>`<div class="product-image-preview-item"><img src="${String(url).replaceAll('"','&quot;')}" alt="Vista ${i+1}"><small>${i===0?'Principal':`Foto ${i+1}`}</small></div>`).join("");
+  productImageItems = (Array.isArray(items) ? items : [items]).filter(Boolean).slice(0,3);
+  if(!productImageItems.length){ preview.innerHTML = '<span class="hint">Sin imágenes</span>'; return; }
+  preview.innerHTML = productImageItems.map((item,i)=>{
+    const url = typeof item === "string" ? item : item.previewUrl;
+    return `<div class="product-image-preview-item" style="display:inline-flex;flex-direction:column;align-items:center;gap:5px;margin:6px;padding:7px;border:1px solid #ddd;border-radius:8px">
+      <img src="${String(url||"").replaceAll('"','&quot;')}" alt="Vista ${i+1}" style="width:90px;height:90px;object-fit:cover;border-radius:6px">
+      <small>${i===0?'Principal':`Foto ${i+1}`}</small>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">
+        <button type="button" data-image-action="left" data-image-index="${i}" ${i===0?'disabled':''}>←</button>
+        <button type="button" data-image-action="right" data-image-index="${i}" ${i===productImageItems.length-1?'disabled':''}>→</button>
+        ${i!==0?`<button type="button" data-image-action="main" data-image-index="${i}">Hacer principal</button>`:''}
+      </div>
+    </div>`;
+  }).join("");
 }
 
 function publicImageUrl(path){
@@ -589,6 +601,7 @@ async function openModal(id = null){
   $("uploadStatus").textContent = "";
   $("pImage").value = "";
   $("pImage").dataset.currentUrls = "[]";
+  productImageItems = [];
 
   let p = null;
 
@@ -623,7 +636,7 @@ async function openModal(id = null){
   $("pOffer").checked = !!p?.offer;
   const currentImages = (p?.images?.length ? p.images : (p?.image ? [p.image] : [])).slice(0,3);
   $("pImage").dataset.currentUrls = JSON.stringify(currentImages);
-  showPreview(currentImages);
+  showPreview(currentImages.map(url=>({type:"url",url,previewUrl:url})));
 
   const hasSizes = !!(p?.talla || "").trim();
   $("pHasSizes").checked = hasSizes;
@@ -652,15 +665,34 @@ $("pImage").addEventListener("change", () => {
   if(files.length > 3){
     alert("Puedes seleccionar máximo 3 imágenes por producto.");
     $("pImage").value = "";
-    showPreview(JSON.parse($("pImage").dataset.currentUrls || "[]"));
+    const current = JSON.parse($("pImage").dataset.currentUrls || "[]");
+    showPreview(current.map(url=>({type:"url",url,previewUrl:url})));
     return;
   }
   if(!files.length){
-    showPreview(JSON.parse($("pImage").dataset.currentUrls || "[]"));
+    const current = JSON.parse($("pImage").dataset.currentUrls || "[]");
+    showPreview(current.map(url=>({type:"url",url,previewUrl:url})));
     return;
   }
-  showPreview(files.map(file=>URL.createObjectURL(file)));
-  $("uploadStatus").textContent = `Se subirán ${files.length} imagen(es) al guardar. Al editar, reemplazarán las fotos actuales.`;
+  showPreview(files.map(file=>({type:"file",file,previewUrl:URL.createObjectURL(file)})));
+  $("uploadStatus").textContent = `Se subirán ${files.length} imagen(es) en el orden mostrado. Usa las flechas para acomodarlas y elige cuál será la principal.`;
+});
+
+$("pImagePreview").addEventListener("click", event => {
+  const button = event.target.closest("[data-image-action]");
+  if(!button) return;
+  const index = Number(button.dataset.imageIndex);
+  const action = button.dataset.imageAction;
+  if(!Number.isInteger(index) || !productImageItems[index]) return;
+  if(action === "left" && index > 0){
+    [productImageItems[index-1], productImageItems[index]] = [productImageItems[index], productImageItems[index-1]];
+  } else if(action === "right" && index < productImageItems.length-1){
+    [productImageItems[index+1], productImageItems[index]] = [productImageItems[index], productImageItems[index+1]];
+  } else if(action === "main"){
+    const [chosen] = productImageItems.splice(index,1);
+    productImageItems.unshift(chosen);
+  }
+  showPreview(productImageItems);
 });
 
 $("saveProduct").onclick = async () => {
@@ -691,12 +723,12 @@ $("saveProduct").onclick = async () => {
       oldImageUrls = Array.from(new Set([...(Array.isArray(data?.imagenes) ? data.imagenes : []), data?.imagen].filter(Boolean)));
     }
 
-    const files = Array.from($("pImage").files || []);
-    if(files.length > 3) throw new Error("Puedes subir máximo 3 imágenes por producto.");
-    if(files.length){
-      for(let i=0;i<files.length;i++){
-        $("uploadStatus").textContent = `Subiendo imagen ${i+1} de ${files.length}...`;
-        const uploaded = await uploadProductImage(files[i]);
+    const filesInOrder = productImageItems.filter(item=>item.type === "file");
+    if(filesInOrder.length > 3) throw new Error("Puedes subir máximo 3 imágenes por producto.");
+    if(filesInOrder.length){
+      for(let i=0;i<filesInOrder.length;i++){
+        $("uploadStatus").textContent = `Subiendo imagen ${i+1} de ${filesInOrder.length}...`;
+        const uploaded = await uploadProductImage(filesInOrder[i].file);
         if(uploaded) uploadedImages.push(uploaded);
       }
     }
@@ -715,15 +747,13 @@ $("saveProduct").onclick = async () => {
       oferta: $("pOffer").checked
     };
 
-    const selectedUrls = uploadedImages.map(item=>item.url);
+    const uploadedByFile = new Map();
+    filesInOrder.forEach((item,index)=>uploadedByFile.set(item,uploadedImages[index]?.url || ""));
+    const selectedUrls = productImageItems.map(item=>item.type === "file" ? (uploadedByFile.get(item) || "") : item.url).filter(Boolean);
     if(selectedUrls.length){
       product.imagen = selectedUrls[0];
       product.imagenes = selectedUrls;
     } else if(editingId){
-      const currentUrls = JSON.parse($("pImage").dataset.currentUrls || "[]");
-      product.imagen = currentUrls[0] || "";
-      product.imagenes = currentUrls;
-    } else {
       product.imagen = "";
       product.imagenes = [];
     }
@@ -864,7 +894,7 @@ async function renderSizeInventory({refresh=false}={}){
     wrap.innerHTML=`<table class="size-inventory-table"><thead><tr><th>Imagen</th><th>Producto</th><th>Talla</th><th>Stock</th><th>Vendidas</th><th>Acciones</th></tr></thead><tbody>${rows.map(r=>{
       const p=r.product;
       const photo=p.image?`<img src="${p.image}" alt="Imagen de ${p.name}" loading="lazy" decoding="async" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\\'inventory-empty-photo\\'>Sin foto</span>'">`:'<span class="inventory-empty-photo">Sin foto</span>';
-      return `<tr><td><div class="size-inventory-photo">${photo}</div></td><td><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td><b>${r.talla}</b></td><td><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td>${Number(r.vendidas)||0}</td><td><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button onclick="sizeStockAction(${r.id},'correccion')">Corregir ventas</button><button class="archive-size-btn" onclick="archiveProductSize(${r.id},${p.id})">Archivar SOLO esta talla</button><button class="danger" onclick="deleteProduct(${p.id})">Archivar TODO el producto</button></div></td></tr>`;
+      return `<tr><td><div class="size-inventory-photo">${photo}</div></td><td><div class="size-inventory-product"><div><div class="size-inventory-name">${p.name||'Producto'}</div><div class="size-inventory-meta">${[p.brand,p.category,p.model].filter(Boolean).join(' · ')}</div></div></div></td><td><b>${r.talla}</b></td><td><span class="size-stock-number ${Number(r.stock)===0?'zero':''}">${Number(r.stock)||0}</span></td><td>${Number(r.vendidas)||0}</td><td><div class="size-inventory-actions"><button onclick="sizeStockAction(${r.id},'venta')" ${Number(r.stock)<=0?'disabled title="Sin existencias"':''}>Venta</button><button onclick="sizeStockAction(${r.id},'entrada')">+ Entrada</button><button onclick="sizeStockAction(${r.id},'ajuste')">Ajustar</button><button onclick="sizeStockAction(${r.id},'correccion')">Corregir ventas</button><button class="archive-size-btn" onclick="archiveProductSize(${r.id},${p.id})">Archivar talla</button></div></td></tr>`;
     }).join('')}</tbody></table>`;
   }catch(e){wrap.innerHTML=`<div class="empty" style="padding:20px">No se pudo cargar inventario por talla. Ejecuta inventario_tallas.sql en Supabase. ${e.message}</div>`;}
 }
@@ -972,16 +1002,7 @@ async function renderArchived(){
     if(sizeError) throw new Error("No se pudieron consultar las tallas archivadas. Ejecuta el SQL incluido. "+sizeError.message);
     const allProducts=products||[];
     const productById=new Map(allProducts.map(p=>[String(p.id),p]));
-    // Normalizar filas de Supabase al formato que usa inventoryProductMarkup.
-    // Sin esta conversión, los productos archivados desde la vista Productos
-    // aparecían como "undefined" y sin foto porque la BD usa nombre/imagen,
-    // mientras que el componente espera name/image.
-    const archivedProducts=allProducts
-      .filter(p=>p.activo===false)
-      .filter(p=>[p.nombre,p.marca,p.categoria,p.modelo,p.talla].join(" ").toLowerCase().includes(query))
-      .map(row=>uiProduct(row))
-      .map(product=>inventoryProductMarkup(product,true))
-      .join("");
+    const archivedProducts=allProducts.filter(p=>p.activo===false).filter(p=>[p.nombre,p.marca,p.categoria,p.modelo,p.talla].join(" ").toLowerCase().includes(query)).map(p=>inventoryProductMarkup(p,true)).join("");
     const archivedSizes=(sizes||[]).filter(r=>{
       const p=productById.get(String(r.producto_id));
       return [r.producto_nombre,r.talla,p?.marca,p?.categoria,p?.modelo].join(" ").toLowerCase().includes(query);
